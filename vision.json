@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-04-17",
+  "about": {
+    "founderName": "Dominic",
+    "expertise": "DevOps Engineer",
+    "codingBackground": "erfahren mit Code, baut mit Claude Code"
+  },
+  "purpose": {
+    "whoWeHelp": "Dominic + Ehefrau (+ perspektivisch erweiterte Familie)",
+    "problem": "Drei verbundene Pain Points: (1) Rezept-Chaos — gute Rezepte verstreut über Screenshots, Tabs, Notizen-Apps, Kochbücher. (2) Planungs-Paralyse — jede Woche neu die 'Was kochen wir?'-Frage, führt zu Wiederholung und Entscheidungsmüdigkeit. (3) Einkaufs-Reibung — manuelle Zettel, vergessene Zutaten, Doppeleinkäufe.",
+    "transformation": "Von 'wöchentlichem Planungs-Stress und Rezept-Suche-Chaos' zu 'Sonntag-Abend-Ritual: 5 Rezepte picken → fertige Einkaufsliste im Handy → entspannte Woche'.",
+    "whyYou": "Dominic hat den DevOps-Hintergrund, um die App sauber self-hosted aufzusetzen, und den persönlichen Skin-in-the-Game — er und seine Frau nutzen das Tool täglich, also gibt es sofortiges ehrliches Feedback."
+  },
+  "product": {
+    "name": "RecipeScheduler",
+    "oneLiner": "Persönliche Rezept-Bibliothek mit Wochenplaner und automatischer Einkaufsliste — self-hosted für die Familie.",
+    "howItWorks": "Rezepte werden manuell oder per URL-Import (JSON-LD) in die Bibliothek aufgenommen. Der Wochenplaner erlaubt per Drag/Klick die Zuweisung von Rezepten zu Wochentagen. Eine Einkaufsliste wird automatisch aus den Zutaten aller Wochen-Rezepte generiert, gruppiert nach Kategorie und abhakbar.",
+    "capabilities": [
+      "Rezept-Library mit Suche, Tags, Rating und persönlichen Notizen",
+      "URL-Import (Chefkoch, NYT Cooking, Kitchen Stories etc. via JSON-LD Recipe Schema)",
+      "Manuelles Rezept-Erfassen mit Foto-Upload",
+      "Wochenplan-Ansicht (Mo-So) mit Rezept-Zuweisung",
+      "Portionen-Skalierung pro Planungs-Eintrag",
+      "Automatisch generierte, nach Kategorie gruppierte Einkaufsliste",
+      "Abhakbare Shopping-Liste (mobile-first)",
+      "Household-Sharing zwischen Dominic und Ehefrau",
+      "PWA für mobile, tablet und desktop",
+      "Phase 2: AI-Import (Instagram-Link, Screenshot, Freitext → strukturiertes Rezept via LLM)"
+    ],
+    "platform": "Web (PWA — mobile-first, funktioniert auf Handy/Tablet/Desktop)",
+    "differentiation": "Kein SaaS, keine monatliche Gebühr, keine Werbung, kein Fremd-Tracking. Volle Datenkontrolle, sauberes UX fokussiert auf den Sonntag-Abend-Workflow.",
+    "magicMoment": "Sonntag 20 Uhr: Dominic öffnet die App, pickt in 2 Minuten 5 Rezepte für die Woche, und hat auf dem Handy sofort eine fertige, nach Supermarkt-Kategorien gruppierte Einkaufsliste, die er Montag im Laden Stück für Stück abhakt."
+  },
+  "audience": {
+    "primary": "Dominic (DevOps Engineer, Hauptkoch im Haushalt, verantwortlich für Planung und Einkauf)",
+    "secondary": "Ehefrau (Co-Planerin, nutzt die App zum Nachschlagen von Rezepten und zum Beitragen/Favorisieren)",
+    "tertiary": "Erweiterte Familie (perspektivisch — Eltern/Geschwister könnten eigene Haushalte mit eigenen Bibliotheken bekommen)",
+    "alternatives": "Paprika App (proprietär, keine Linux/Self-Host-Option), Notion-Datenbank (zu generisch, keine Einkaufsliste), Chefkoch Favoriten (kein Wochenplaner, kein Offline), Excel/Google Sheets (keine strukturierten Zutaten)",
+    "frustrations": "Bestehende Lösungen sind entweder proprietär und in der Cloud (Datenschutz, Vendor-Lock-in), zu generisch (Notion), oder adressieren nicht den gesamten Flow Library→Plan→Liste in einem Tool."
+  },
+  "businessIntent": {
+    "revenueModel": "Keiner — persönliches Tool für den eigenen Haushalt, kein Vertrieb geplant",
+    "ninetyDayGoal": "Funktionierende MVP-Version produktiv nutzen im Dominic/Ehefrau-Haushalt: mindestens 20 Rezepte erfasst, 4 Wochen durchgeplant, Einkaufslisten aktiv genutzt.",
+    "sixMonthVision": "Stabile, täglich genutzte App. AI-Import (Phase 2) implementiert. Eventuell Familie als zusätzliche Haushalte onboarden. Observability und Backup-Strategie eingerichtet.",
+    "constraints": "Keine Ausgaben für SaaS (außer ~5€/Monat Hetzner), baut nur abends/am Wochenende, Claude Code als Haupt-Build-Partner",
+    "gtm": "Nicht anwendbar — privates Tool"
+  },
+  "feeling": {
+    "brandPersonality": "Warm, ruhig, zuverlässig, unaufdringlich. Fühlt sich an wie eine gemütliche Küche, nicht wie ein SaaS-Dashboard.",
+    "visualMood": "Paprika/Kitchen-Stories-inspiriert: Terracotta, Olivgrün, warmes Creme, weiche Schatten, großzügige Whitespace, essen-fokussierte Foto-Ästhetik",
+    "toneOfVoice": "Freundlich, knapp, hilfreich. Deutsche Sprache als Primärsprache. Keine Marketing-Phrasen.",
+    "antiPatterns": "Kein aggressives 'Gamification' (keine Streaks/Badges), keine Push-Notifications, keine Analytics-Popups, kein Onboarding-Wizard, keine Tutorial-Overlays"
+  },
+  "techStack": {
+    "frontend": "Next.js 15 (App Router) + React + TypeScript + Tailwind CSS + shadcn/ui",
+    "backend": "Next.js API Routes / Server Actions (integriert im Next.js App)",
+    "database": "Postgres (self-hosted im gleichen Coolify-Stack)",
+    "orm": "Drizzle ORM (typsicher, saubere Migrations)",
+    "auth": "Better Auth (Magic-Link Email via Resend oder SMTP)",
+    "storage": "Minio (self-hosted S3-kompatibel) für Rezept-Fotos",
+    "email": "Resend (5.000 Mails/Monat gratis) für Magic-Link-Versand",
+    "payments": "Nicht anwendbar (privates Tool, kein Revenue)",
+    "hosting": "Self-hosted auf Hetzner Cloud VPS, deployed via Coolify oder Dokploy",
+    "pwa": "next-pwa oder Serwist für Service-Worker + Offline-Support + 'Add to Home Screen'"
+  },
+  "tooling": {
+    "codingAgent": "Claude Code"
+  }
+}
