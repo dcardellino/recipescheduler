@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: recipes-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: recipes
+      POSTGRES_PASSWORD: recipes
+      POSTGRES_DB: recipes
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U recipes -d recipes" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: recipes-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio12345
+    ports:
+      - "9010:9000"
+      - "9011:9001"
+    volumes:
+      - minio-data:/data
+
+  # Containerised Next.js app. Opt-in via `docker compose --profile full up -d`
+  # so the default `up` keeps DB+Minio running alongside `npm run dev` on the host.
+  # Run `npm run db:migrate` against Postgres before first start (drizzle-kit
+  # is a devDep and not included in the standalone build).
+  app:
+    profiles: [ "full" ]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: recipes-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    ports:
+      - "3000:3000"
+    env_file: .env.local
+    environment:
+      # Override .env.local host addresses with compose-internal service names.
+      # Browser-facing URLs (MINIO_PUBLIC_URL, BETTER_AUTH_URL, NEXT_PUBLIC_APP_URL)
+      # stay at localhost because the browser reaches containers via host ports.
+      DATABASE_URL: postgres://recipes:recipes@postgres:5432/recipes
+      MINIO_ENDPOINT: http://minio:9000
+      NODE_ENV: production
+      RESEND_API_KEY: re_QHE9j1wg_ERmzxKrNr2FWAHmVPnu1EiYq
+      MAIL_FROM: "RecipeScheduler <recipes@cardellino.tech>"
+
+volumes:
+  postgres-data:
+  minio-data:

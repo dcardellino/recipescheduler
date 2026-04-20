@@ -61,7 +61,7 @@ graph TB
 | Auth | better-auth | Magic Link Plugin |
 | File Storage | Minio | S3-compatible |
 | Email | Resend SDK | for Magic Links |
-| PWA | Serwist (next-pwa Nachfolger) | Service Worker, Offline |
+| PWA | Statisches Web-App-Manifest | Add-to-Home-Screen, Standalone-Display (kein Service Worker im MVP) |
 | Form Validation | Zod | für Server Actions + Client |
 | Data Fetching | React Server Components + TanStack Query | für interaktive Bereiche |
 | URL Recipe Parsing | `schema-dts` + eigener JSON-LD-Parser | kein externes SaaS |
@@ -74,7 +74,7 @@ graph TB
 - **better-auth**: Nutze das `magicLink` Plugin, konfiguriere SMTP/Resend als Transport. Session-Cookies, sichere HTTP-Only Flags.
 - **Drizzle**: Schema in `src/db/schema.ts`, Migrations via `drizzle-kit`. Nutze `pgTable`, relationale Abfragen mit `relations()`.
 - **Minio**: S3-kompatible Client-Lib (`@aws-sdk/client-s3`) mit Minio-Endpoint. Signed URLs für direkten Browser-Upload (um Next.js-Server zu entlasten).
-- **Serwist**: Für PWA Manifest + Offline-Cache der Einkaufsliste.
+- **PWA-Manifest**: `public/manifest.json` + Icons, verlinkt via `<link rel="manifest">` in root layout. Kein Service Worker im MVP — nur Installierbarkeit (Home-Screen, Standalone-Display). Offline-Support via Service Worker ist bewusst aus-gescoped (siehe Roadmap Ideas Backlog).
 
 ### Repo Structure
 
@@ -443,10 +443,11 @@ function generateShoppingList(weekStart):
 
 - **US-09** Als User möchte ich Items abhaken und manuell hinzufügen können.
   - AC: Optimistic UI (Checkbox reagiert sofort)
-  - AC: Offline-Support — Änderungen syncen, wenn wieder online
+  - AC: Fehler-Handling: bei Netzwerk-Fehler → revert + Toast mit Retry
 
-- **US-10** Als User möchte ich die Einkaufsliste auf meinem Handy nutzen, auch im Funkloch-Supermarkt.
-  - AC: PWA installiert → funktioniert offline → bei Online-Sync mit Household
+- **US-10** Als User möchte ich die Einkaufsliste wie eine App auf meinem Handy nutzen.
+  - AC: PWA-Manifest → "Zum Home-Bildschirm" installierbar → startet im Standalone-Modus ohne Browser-Chrome
+  - AC: Offline-Indikator-Banner zeigt klar an, wenn keine Verbindung besteht
 
 ### Epic: Household
 
@@ -482,8 +483,8 @@ Priorität: **P0** = MVP blocker, **P1** = MVP nice-to-have, **P2** = Post-MVP
 | FR-017 | Item abhaken (optimistisch) | P0 | Click → sofort checked state, dann async DB-Update. |
 | FR-018 | Custom Item hinzufügen | P0 | Eingabe: Name (+ optional Menge/Einheit/Kategorie). |
 | FR-019 | Mehrere Einkaufslisten (Historie) | P1 | Ältere Listen abrufbar, nicht löschen. |
-| FR-020 | PWA Manifest + Installierbar | P0 | Add-to-Home-Screen funktioniert, Icon korrekt, Splash. |
-| FR-021 | Offline-Support für Einkaufsliste | P0 | Shopping-Page funktioniert offline, Änderungen werden gequeued und bei Online synct. |
+| FR-020 | PWA Manifest + Installierbar | P0 | Add-to-Home-Screen funktioniert, Icon korrekt, Splash, Standalone-Display. Kein Service Worker im MVP. |
+| FR-021 | Offline-Indikator | P0 | Banner sichtbar wenn `navigator.onLine === false`, mit Hinweis "Änderungen werden nicht gespeichert". Echter Offline-Sync bewusst out of scope (siehe § 15). |
 | FR-022 | Foto-Upload (Minio) | P0 | Signed PUT URL, Bild erscheint nach Upload in UI. Resize-Logik (max 1600px breit) client-seitig. |
 | FR-023 | Settings-Page | P0 | Household-Name ändern, Mitglieder sehen/einladen, Abmelden. |
 | FR-024 | Responsive Design | P0 | Mobile (320–640px), Tablet (641–1024px), Desktop (>1024px). |
@@ -742,7 +743,7 @@ export async function sendMagicLinkEmail(email: string, url: string) {
 | Rezept ohne Zutaten in Wochenplan | In Einkaufsliste: kein Eintrag aus diesem Rezept. UI zeigt Hinweis "Rezept hat keine Zutaten definiert" beim Entry. |
 | Einkaufsliste für Woche ohne Rezepte | Leerer State: "Plane zuerst Rezepte in deiner Woche, dann generiere eine Einkaufsliste." |
 | Foto-Upload fehlgeschlagen | Retry-Button; Rezept lässt sich trotzdem speichern, nur ohne Bild |
-| Offline beim Rezept-Speichern | Service-Worker queue nicht im MVP für Creates (nur für Shopping-List-Updates) — User sieht Offline-Banner und wird gebeten zu warten |
+| Offline beim Speichern (Rezept oder Shopping-Item) | Kein Service-Worker-Queue im MVP. User sieht Offline-Banner; Actions werden versucht und bei Fehler per Toast zurückgerollt, User wird gebeten zu warten bis wieder Verbindung besteht. |
 | Gleiche Zutat unterschiedliche Kategorie-Klassifikation in 2 Rezepten | `mostCommonCategory()` — bei Gleichstand: erste gewinnt |
 | Sehr großes Rezept-Foto (>10MB) | Client-seitiges Resize auf max 1600px Breite vor Upload; Server-seitig 5MB-Limit hart |
 | Magic-Link bereits benutzt/abgelaufen | Zurück zu Login-Seite mit Meldung "Link ungültig oder abgelaufen — bitte neuen anfordern" |
@@ -796,6 +797,7 @@ export async function sendMagicLinkEmail(email: string, url: string) {
 - Meal-Prep-Modus (Batch-Cooking-Multiplikatoren)
 - Einkaufsliste-Export (PDF, Markdown)
 - Native iOS/Android Apps
+- **Service-Worker-basierter Offline-Support** (inkl. IndexedDB-Queue für Shopping-List-Toggles und Background-Sync). Nur PWA-Manifest ist drin — ohne Offline-Funktionalität. Re-evaluieren nach 2-3 Monaten Nutzung.
 - Kalender-Sync (iCal, Google Cal)
 - Mehrsprachigkeit (nur Deutsch)
 - Inventar/Pantry-Tracking
@@ -812,4 +814,4 @@ export async function sendMagicLinkEmail(email: string, url: string) {
 2. **Welche Domain nutzt Dominic?** → Benötigt für E-Mail-From-Adresse + HTTPS-Cert. Zu klären vor Phase 2.
 3. **Backup-Strategie: Hetzner Storage Box oder Backblaze B2?** → Storage Box günstiger, B2 hat bessere CLI-Integration. Siehe deployment.md.
 4. **Soll die Ehefrau in einem eigenen Onboarding-Flow starten, oder reicht Invite + Magic Link?** → Annahme: Invite + Magic Link reicht. Falls Feedback "verwirrend", Phase 2 leichtes Welcome-Screen.
-5. **Offline-Create für Rezepte erlauben?** → MVP nein (nur Shopping-List Offline). Evaluate nach 4 Wochen Nutzung.
+5. **Offline-Support via Service Worker später nachziehen?** → MVP nein (weder für Creates noch für Shopping-List). Nur PWA-Manifest + Online-Indikator. Re-evaluieren nach 2-3 Monaten Nutzung, falls reales Feedback Supermarkt-Funklöcher als Problem bestätigt. Siehe Roadmap Ideas Backlog.

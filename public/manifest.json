@@ -1,0 +1,20 @@
+{
+  "name": "RecipeScheduler",
+  "short_name": "Recipes",
+  "description": "Persönliche Rezept-Bibliothek mit Wochenplaner und automatischer Einkaufsliste.",
+  "start_url": "/recipes",
+  "display": "standalone",
+  "background_color": "#FAF7F2",
+  "theme_color": "#C85A3E",
+  "lang": "de",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

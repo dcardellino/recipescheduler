@@ -92,7 +92,7 @@ Dominic kocht viel, sammelt Rezepte aus verschiedenen Quellen und will Kontrolle
 1. **Der Workflow ist wichtiger als die Feature-Liste.** Jede neue Funktion muss den Sonntag-Flow oder den Mittwoch-Flow verbessern — sonst wird sie abgelehnt.
 2. **Mobile wins for consumption, Desktop wins for curation.** Desktop für Rezept-Anlegen und Wochenplan-Erstellung, Handy für Einkaufsliste und Rezept-Anschauen beim Kochen.
 3. **Keine Daten ohne Zweck.** Wir speichern nur, was der User aktiv eingibt oder was nützlich für ihn ist. Keine Analytics, kein Tracking.
-4. **Lokale Geschwindigkeit über Cloud-Features.** Optimistisches UI, Offline-First für Einkaufsliste, keine Ladespinner für Standard-Aktionen.
+4. **Lokale Geschwindigkeit über Cloud-Features.** Optimistisches UI, keine Ladespinner für Standard-Aktionen, schneller First-Paint durch serverseitiges Rendering.
 
 ### Market Differentiation
 
@@ -126,7 +126,7 @@ Im Vergleich zu Paprika/Mealime/Plan to Eat:
 - Wochenplan-View mit Drag oder Klick
 - Portionen-Skalierung pro Planungs-Eintrag
 - Einkaufsliste — auto-generiert, nach Kategorie gruppiert, abhakbar
-- PWA (installierbar, offline-tauglich für Einkaufsliste)
+- PWA-Manifest (installierbar, Home-Screen-Icon, Standalone-Display)
 - Deutsche Sprache UI
 
 **Explicitly Out of Scope (für MVP):**
@@ -177,7 +177,7 @@ Social Features, Nährwerte, Native Apps, multi-tenant SaaS.
 **Technische KPIs:**
 
 - Page-Load < 1.5s (self-hosted)
-- PWA installierbar + Offline-Support für Einkaufsliste
+- PWA-Manifest installiert auf Dominics + Ehefraus Handy (Home-Screen-Icon)
 - 99% Uptime (messbar via Uptime Kuma oder ähnlich)
 
 ### Risks
@@ -203,7 +203,7 @@ Für kochende Paare und Familien, die Datenhoheit und Alltagsfunktion über clou
 
 - **Ruhig** — keine Aufregung, keine Notifications, kein Dark Pattern
 - **Warm** — Farben und Typografie wirken wie eine gut ausgestattete Küche
-- **Zuverlässig** — Offline-fähig, schnell, vorhersehbar
+- **Zuverlässig** — schnell, vorhersehbar, klar kommuniziert wenn mal etwas nicht funktioniert (z.B. offline)
 - **Diskret** — keine Account-Felder die nicht gebraucht werden, kein Überreden
 
 ### Voice & Tone Guide

@@ -62,7 +62,7 @@
     "email": "Resend (5.000 Mails/Monat gratis) für Magic-Link-Versand",
     "payments": "Nicht anwendbar (privates Tool, kein Revenue)",
     "hosting": "Self-hosted auf Hetzner Cloud VPS, deployed via Coolify oder Dokploy",
-    "pwa": "next-pwa oder Serwist für Service-Worker + Offline-Support + 'Add to Home Screen'"
+    "pwa": "Statisches Web-App-Manifest für 'Add to Home Screen' + Standalone-Display. Kein Service Worker, kein Offline-Sync im MVP (bewusst aus-gescoped, siehe docs/product-roadmap.md Phase 4)."
   },
   "tooling": {
     "codingAgent": "Claude Code"
