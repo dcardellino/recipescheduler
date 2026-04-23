@@ -31,15 +31,12 @@ services:
     volumes:
       - minio-data:/data
 
-  # Containerised Next.js app. Opt-in via `docker compose --profile full up -d`
-  # so the default `up` keeps DB+Minio running alongside `npm run dev` on the host.
-  # Run `npm run db:migrate` against Postgres before first start (drizzle-kit
-  # is a devDep and not included in the standalone build).
   app:
-    profiles: [ "full" ]
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
     container_name: recipes-app
     restart: unless-stopped
     depends_on:
