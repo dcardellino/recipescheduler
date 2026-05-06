@@ -95,7 +95,10 @@ export const recipeFormSchema = z.object({
   imageUrl: z
     .string()
     .trim()
-    .url("Ungültige Bild-URL.")
+    .refine(
+      (v) => v.startsWith("/") || /^https?:\/\//i.test(v),
+      "Ungültige Bild-URL.",
+    )
     .max(2000)
     .optional()
     .nullable()
