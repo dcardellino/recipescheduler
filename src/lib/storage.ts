@@ -7,10 +7,8 @@ const accessKeyId = process.env.MINIO_ACCESS_KEY ?? "minio";
 const secretAccessKey = process.env.MINIO_SECRET_KEY ?? "minio12345";
 export const bucket = process.env.MINIO_BUCKET ?? "recipes";
 
-const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
-
 function proxyUrl(key: string) {
-  return `${appUrl}/api/storage/${key}`;
+  return `/api/storage/${key}`;
 }
 
 export const s3 = new S3Client({
