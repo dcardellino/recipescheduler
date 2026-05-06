@@ -30,25 +30,11 @@ export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
         maxWidth: 1600,
         quality: 0.85,
       });
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: resized.name,
-          contentType: resized.type,
-        }),
-      });
-      if (!res.ok) throw new Error("Upload konnte nicht vorbereitet werden.");
-      const { uploadUrl, publicUrl } = (await res.json()) as {
-        uploadUrl: string;
-        publicUrl: string;
-      };
-      const put = await fetch(uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": resized.type },
-        body: resized,
-      });
-      if (!put.ok) throw new Error("Bild-Upload fehlgeschlagen.");
+      const form = new FormData();
+      form.append("file", resized);
+      const res = await fetch("/api/upload", { method: "POST", body: form });
+      if (!res.ok) throw new Error("Bild-Upload fehlgeschlagen.");
+      const { publicUrl } = (await res.json()) as { publicUrl: string };
       onChange(publicUrl);
       toast.success("Bild hochgeladen.");
     } catch (err) {

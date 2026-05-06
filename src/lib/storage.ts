@@ -1,16 +1,18 @@
 import "server-only";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
 
 const endpoint = process.env.MINIO_ENDPOINT ?? "http://localhost:9000";
-const publicUrl = process.env.MINIO_PUBLIC_URL ?? endpoint;
 const accessKeyId = process.env.MINIO_ACCESS_KEY ?? "minio";
 const secretAccessKey = process.env.MINIO_SECRET_KEY ?? "minio12345";
 export const bucket = process.env.MINIO_BUCKET ?? "recipes";
 
-// Server-side client: talks to Minio on the internal network (container service
-// name in Docker, or localhost when running on the host).
+const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+
+function proxyUrl(key: string) {
+  return `${appUrl}/api/storage/${key}`;
+}
+
 export const s3 = new S3Client({
   region: "auto",
   endpoint,
@@ -18,42 +20,26 @@ export const s3 = new S3Client({
   forcePathStyle: true,
 });
 
-// Separate client used only to mint presigned URLs. The signature is bound to
-// the endpoint host, so we sign against the browser-reachable public URL even
-// though PutObject from the server goes via the internal endpoint.
-const signingClient =
-  publicUrl === endpoint
-    ? s3
-    : new S3Client({
-        region: "auto",
-        endpoint: publicUrl,
-        credentials: { accessKeyId, secretAccessKey },
-        forcePathStyle: true,
-      });
-
-export async function getUploadUrl(
+export async function uploadFile(
+  buffer: Buffer,
   filename: string,
   contentType: string,
-  opts: { prefix?: string; expiresSeconds?: number } = {},
-) {
-  const { prefix = "uploads", expiresSeconds = 900 } = opts;
+  opts: { prefix?: string } = {},
+): Promise<{ publicUrl: string; key: string }> {
+  const { prefix = "uploads" } = opts;
   const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
   const key = `${prefix}/${randomUUID()}-${safeName}`;
 
-  const cmd = new PutObjectCommand({
-    Bucket: bucket,
-    Key: key,
-    ContentType: contentType,
-  });
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+    }),
+  );
 
-  const uploadUrl = await getSignedUrl(signingClient, cmd, {
-    expiresIn: expiresSeconds,
-  });
-  return {
-    uploadUrl,
-    publicUrl: `${publicUrl.replace(/\/$/, "")}/${bucket}/${key}`,
-    key,
-  };
+  return { publicUrl: proxyUrl(`${bucket}/${key}`), key };
 }
 
 const MAX_IMAGE_BYTES = 10_000_000;
@@ -145,7 +131,7 @@ export async function uploadImageFromUrl(
 
     return {
       ok: true,
-      publicUrl: `${publicUrl.replace(/\/$/, "")}/${bucket}/${key}`,
+      publicUrl: proxyUrl(`${bucket}/${key}`),
     };
   } catch (err) {
     return {
