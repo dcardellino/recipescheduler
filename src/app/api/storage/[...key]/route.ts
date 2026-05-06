@@ -6,7 +6,8 @@ export async function GET(
   { params }: { params: Promise<{ key: string[] }> },
 ) {
   const { key } = await params;
-  const objectKey = key.join("/");
+  const [, ...rest] = key;
+  const objectKey = rest.join("/");
 
   try {
     const obj = await s3.send(
