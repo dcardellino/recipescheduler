@@ -3,6 +3,7 @@ import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   recipe,
+  recipeComponent,
   recipeIngredient,
   recipeStep,
   recipeTag,
@@ -114,6 +115,22 @@ export async function listRecipes(
   }));
 }
 
+export type RecipeIngredient = {
+  id: string;
+  position: number;
+  quantity: number | null;
+  unit: string | null;
+  name: string;
+  note: string | null;
+  category: string;
+};
+
+export type RecipeStep = {
+  id: string;
+  position: number;
+  text: string;
+};
+
 export type RecipeDetail = {
   id: string;
   title: string;
@@ -127,20 +144,14 @@ export type RecipeDetail = {
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;
-  ingredients: {
+  components: Array<{
     id: string;
-    position: number;
-    quantity: number | null;
-    unit: string | null;
     name: string;
-    note: string | null;
-    category: string;
-  }[];
-  steps: {
-    id: string;
     position: number;
-    text: string;
-  }[];
+    ingredients: RecipeIngredient[];
+  }>;
+  ingredients: RecipeIngredient[];
+  steps: RecipeStep[];
   tags: { id: string; name: string }[];
 };
 
@@ -155,7 +166,7 @@ export async function getRecipe(id: string): Promise<RecipeDetail | null> {
 
   if (!row) return null;
 
-  const [ingredients, steps, tagRows] = await Promise.all([
+  const [allIngredients, steps, tagRows, components] = await Promise.all([
     db
       .select()
       .from(recipeIngredient)
@@ -172,7 +183,35 @@ export async function getRecipe(id: string): Promise<RecipeDetail | null> {
       .innerJoin(tag, eq(recipeTag.tagId, tag.id))
       .where(eq(recipeTag.recipeId, id))
       .orderBy(asc(tag.name)),
+    db
+      .select()
+      .from(recipeComponent)
+      .where(eq(recipeComponent.recipeId, id))
+      .orderBy(asc(recipeComponent.position)),
   ]);
+
+  const mapIngredient = (i: (typeof allIngredients)[number]): RecipeIngredient => ({
+    id: i.id,
+    position: i.position,
+    quantity: i.quantity,
+    unit: i.unit,
+    name: i.name,
+    note: i.note,
+    category: i.category,
+  });
+
+  const ingredientsByComponent = new Map<string, RecipeIngredient[]>();
+  const ungroupedIngredients: RecipeIngredient[] = [];
+
+  for (const ingredient of allIngredients) {
+    if (ingredient.componentId === null) {
+      ungroupedIngredients.push(mapIngredient(ingredient));
+    } else {
+      const list = ingredientsByComponent.get(ingredient.componentId) ?? [];
+      list.push(mapIngredient(ingredient));
+      ingredientsByComponent.set(ingredient.componentId, list);
+    }
+  }
 
   return {
     id: row.id,
@@ -187,15 +226,13 @@ export async function getRecipe(id: string): Promise<RecipeDetail | null> {
     notes: row.notes,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
-    ingredients: ingredients.map((i) => ({
-      id: i.id,
-      position: i.position,
-      quantity: i.quantity,
-      unit: i.unit,
-      name: i.name,
-      note: i.note,
-      category: i.category,
+    components: components.map((c) => ({
+      id: c.id,
+      name: c.name,
+      position: c.position,
+      ingredients: ingredientsByComponent.get(c.id) ?? [],
     })),
+    ingredients: ungroupedIngredients,
     steps: steps.map((s) => ({ id: s.id, position: s.position, text: s.text })),
     tags: tagRows,
   };
