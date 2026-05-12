@@ -23,7 +23,12 @@
       "Bash(rm -rf node_modules \".claude/worktrees/feature+recipe-components/node_modules\")",
       "Bash(git checkout *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git *)",
+      "Bash(node *)",
+      "Bash(xargs cat *)",
+      "Bash(npx jest *)",
+      "Bash(npx --no jest --testPathPatterns=\"recipe\" --no-coverage)"
     ]
   }
 }

@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { IngredientsInput } from "@/components/recipe/ingredients-input";
+import { ComponentsInput } from "@/components/recipe/components-input";
 import { StepsInput } from "@/components/recipe/steps-input";
 import { ImageUpload } from "@/components/recipe/image-upload";
 import { TagInput } from "@/components/recipe/tag-input";
@@ -237,6 +238,13 @@ export function RecipeForm({
           <section className="space-y-4">
             <h2 className="font-heading text-xl">Zutaten</h2>
             <IngredientsInput />
+          </section>
+
+          <Separator />
+
+          <section className="space-y-4">
+            <h2 className="font-heading text-xl">Teig-Komponenten (optional)</h2>
+            <ComponentsInput />
           </section>
 
           <Separator />
