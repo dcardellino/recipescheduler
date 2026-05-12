@@ -45,7 +45,18 @@ export default async function EditRecipePage({
           ],
     steps: recipe.steps.map((s) => ({ text: s.text })),
     tagNames: recipe.tags.map((t) => t.name),
-    components: [],
+    components: recipe.components.map((c) => ({
+      id: c.id,
+      name: c.name,
+      position: c.position,
+      ingredients: c.ingredients.map((i) => ({
+        name: i.name,
+        quantity: i.quantity ?? undefined,
+        unit: i.unit ?? undefined,
+        note: i.note ?? undefined,
+        category: i.category as IngredientCategory,
+      })),
+    })),
   } satisfies RecipeFormValues;
 
   return (
