@@ -129,7 +129,87 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[1fr_1.3fr]">
         <section className="space-y-3">
           <h2 className="font-heading text-xl">Zutaten</h2>
-          {recipe.ingredients.length === 0 ? (
+          {recipe.components.length > 0 ? (
+            // Render components with grouped ingredients
+            <div className="space-y-4">
+              {recipe.components.map((component) => (
+                <div key={component.id} className="space-y-2">
+                  <h3 className="font-medium text-sm">{component.name}</h3>
+                  <div className="border-t-2 border-dashed border-border/60 mb-2" />
+                  {component.ingredients.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Keine Zutaten für diese Komponente.
+                    </p>
+                  ) : (
+                    <ul className="space-y-1.5 text-sm">
+                      {component.ingredients.map((ing) => (
+                        <li
+                          key={ing.id}
+                          className="flex justify-between gap-3 border-b border-border/60 pb-1.5 last:border-0"
+                        >
+                          <div>
+                            <span className="font-medium">{ing.name}</span>
+                            {ing.note && (
+                              <span className="text-muted-foreground">
+                                {" "}
+                                — {ing.note}
+                              </span>
+                            )}
+                            <div className="text-xs text-muted-foreground">
+                              {
+                                INGREDIENT_CATEGORY_LABELS[
+                                  ing.category as keyof typeof INGREDIENT_CATEGORY_LABELS
+                                ]
+                              }
+                            </div>
+                          </div>
+                          <span className="shrink-0 text-muted-foreground tabular-nums">
+                            {formatQuantity(ing.quantity, ing.unit)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+              {/* Render ungrouped ingredients as "Weitere Zutaten" if any */}
+              {recipe.ingredients.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="font-medium text-sm">Weitere Zutaten</h3>
+                  <div className="border-t-2 border-dashed border-border/60 mb-2" />
+                  <ul className="space-y-1.5 text-sm">
+                    {recipe.ingredients.map((ing) => (
+                      <li
+                        key={ing.id}
+                        className="flex justify-between gap-3 border-b border-border/60 pb-1.5 last:border-0"
+                      >
+                        <div>
+                          <span className="font-medium">{ing.name}</span>
+                          {ing.note && (
+                            <span className="text-muted-foreground">
+                              {" "}
+                              — {ing.note}
+                            </span>
+                          )}
+                          <div className="text-xs text-muted-foreground">
+                            {
+                              INGREDIENT_CATEGORY_LABELS[
+                                ing.category as keyof typeof INGREDIENT_CATEGORY_LABELS
+                              ]
+                            }
+                          </div>
+                        </div>
+                        <span className="shrink-0 text-muted-foreground tabular-nums">
+                          {formatQuantity(ing.quantity, ing.unit)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : // Backward compatibility: render ungrouped ingredients as before
+          recipe.ingredients.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Keine Zutaten angelegt.
             </p>
