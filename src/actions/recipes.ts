@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
   recipe,
+  recipeComponent,
   recipeIngredient,
   recipeStep,
   recipeTag,
@@ -69,10 +70,39 @@ export async function createRecipe(
 
     const recipeId = inserted.id;
 
+    if (data.components.length > 0) {
+      for (const comp of data.components) {
+        const [insertedComp] = await tx
+          .insert(recipeComponent)
+          .values({
+            recipeId,
+            name: comp.name,
+            position: comp.position,
+          })
+          .returning({ id: recipeComponent.id });
+
+        if (comp.ingredients.length > 0) {
+          await tx.insert(recipeIngredient).values(
+            comp.ingredients.map((ing, idx) => ({
+              recipeId,
+              componentId: insertedComp.id,
+              position: idx,
+              quantity: ing.quantity ?? null,
+              unit: ing.unit ?? null,
+              name: ing.name,
+              note: ing.note ?? null,
+              category: ing.category,
+            })),
+          );
+        }
+      }
+    }
+
     if (data.ingredients.length > 0) {
       await tx.insert(recipeIngredient).values(
         data.ingredients.map((ing, idx) => ({
           recipeId,
+          componentId: null,
           position: idx,
           quantity: ing.quantity ?? null,
           unit: ing.unit ?? null,
@@ -150,13 +180,45 @@ export async function updateRecipe(
     await tx
       .delete(recipeIngredient)
       .where(eq(recipeIngredient.recipeId, id));
+    await tx
+      .delete(recipeComponent)
+      .where(eq(recipeComponent.recipeId, id));
     await tx.delete(recipeStep).where(eq(recipeStep.recipeId, id));
     await tx.delete(recipeTag).where(eq(recipeTag.recipeId, id));
+
+    if (data.components.length > 0) {
+      for (const comp of data.components) {
+        const [insertedComp] = await tx
+          .insert(recipeComponent)
+          .values({
+            recipeId: id,
+            name: comp.name,
+            position: comp.position,
+          })
+          .returning({ id: recipeComponent.id });
+
+        if (comp.ingredients.length > 0) {
+          await tx.insert(recipeIngredient).values(
+            comp.ingredients.map((ing, idx) => ({
+              recipeId: id,
+              componentId: insertedComp.id,
+              position: idx,
+              quantity: ing.quantity ?? null,
+              unit: ing.unit ?? null,
+              name: ing.name,
+              note: ing.note ?? null,
+              category: ing.category,
+            })),
+          );
+        }
+      }
+    }
 
     if (data.ingredients.length > 0) {
       await tx.insert(recipeIngredient).values(
         data.ingredients.map((ing, idx) => ({
           recipeId: id,
+          componentId: null,
           position: idx,
           quantity: ing.quantity ?? null,
           unit: ing.unit ?? null,
