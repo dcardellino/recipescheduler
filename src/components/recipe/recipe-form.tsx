@@ -25,18 +25,18 @@ import { TagInput } from "@/components/recipe/tag-input";
 import { RatingInput } from "@/components/recipe/rating-input";
 import {
   recipeFormSchema,
-  type RecipeFormInput,
+  type RecipeFormValues,
 } from "@/lib/schemas/recipe";
 import { createRecipe, updateRecipe } from "@/actions/recipes";
 
 type RecipeFormProps = {
   mode: "create" | "edit";
   recipeId?: string;
-  defaultValues?: Partial<RecipeFormInput>;
+  defaultValues?: Partial<RecipeFormValues>;
   availableTags: { id: string; name: string }[];
 };
 
-const EMPTY_DEFAULTS: RecipeFormInput = {
+const EMPTY_DEFAULTS: RecipeFormValues = {
   title: "",
   description: null,
   sourceUrl: null,
@@ -51,7 +51,8 @@ const EMPTY_DEFAULTS: RecipeFormInput = {
   ],
   steps: [],
   tagNames: [],
-};
+  components: [],
+} satisfies RecipeFormValues;
 
 export function RecipeForm({
   mode,
@@ -62,13 +63,13 @@ export function RecipeForm({
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
 
-  const form = useForm<RecipeFormInput>({
+  const form = useForm<RecipeFormValues>({
     resolver: zodResolver(recipeFormSchema),
     defaultValues: { ...EMPTY_DEFAULTS, ...defaultValues },
     mode: "onBlur",
   });
 
-  async function onSubmit(values: RecipeFormInput) {
+  async function onSubmit(values: RecipeFormValues) {
     setSubmitting(true);
     try {
       if (mode === "edit" && recipeId) {

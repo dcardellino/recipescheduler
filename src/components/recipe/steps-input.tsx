@@ -4,10 +4,10 @@ import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import type { RecipeFormInput } from "@/lib/schemas/recipe";
+import type { RecipeFormValues } from "@/lib/schemas/recipe";
 
 export function StepsInput() {
-  const { control, register, formState } = useFormContext<RecipeFormInput>();
+  const { control, register, formState } = useFormContext<RecipeFormValues>();
   const { fields, append, remove, move } = useFieldArray({
     control,
     name: "steps",

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { RecipeForm } from "@/components/recipe/recipe-form";
 import { getRecipe, listTags } from "@/lib/queries/recipes";
-import type { RecipeFormInput } from "@/lib/schemas/recipe";
+import type { RecipeFormValues } from "@/lib/schemas/recipe";
 import type { IngredientCategory } from "@/db/schema";
 
 export default async function EditRecipePage({
@@ -15,7 +15,7 @@ export default async function EditRecipePage({
   const [recipe, tags] = await Promise.all([getRecipe(id), listTags()]);
   if (!recipe) notFound();
 
-  const defaultValues: RecipeFormInput = {
+  const defaultValues: RecipeFormValues = {
     title: recipe.title,
     description: recipe.description,
     sourceUrl: recipe.sourceUrl,
@@ -45,7 +45,8 @@ export default async function EditRecipePage({
           ],
     steps: recipe.steps.map((s) => ({ text: s.text })),
     tagNames: recipe.tags.map((t) => t.name),
-  };
+    components: [],
+  } satisfies RecipeFormValues;
 
   return (
     <div className="space-y-4">

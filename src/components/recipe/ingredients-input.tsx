@@ -14,11 +14,11 @@ import {
 import {
   INGREDIENT_CATEGORIES,
   INGREDIENT_CATEGORY_LABELS,
-  type RecipeFormInput,
+  type RecipeFormValues,
 } from "@/lib/schemas/recipe";
 
 export function IngredientsInput() {
-  const { control, register, formState } = useFormContext<RecipeFormInput>();
+  const { control, register, formState } = useFormContext<RecipeFormValues>();
   const { fields, append, remove, move } = useFieldArray({
     control,
     name: "ingredients",
@@ -138,7 +138,7 @@ export function IngredientsInput() {
 }
 
 function CategorySelect({ index }: { index: number }) {
-  const { setValue, watch } = useFormContext<RecipeFormInput>();
+  const { setValue, watch } = useFormContext<RecipeFormValues>();
   const value = watch(`ingredients.${index}.category`);
   return (
     <Select
@@ -146,7 +146,7 @@ function CategorySelect({ index }: { index: number }) {
       onValueChange={(v) =>
         setValue(
           `ingredients.${index}.category`,
-          v as RecipeFormInput["ingredients"][number]["category"],
+          v as RecipeFormValues["ingredients"][number]["category"],
           { shouldDirty: true },
         )
       }

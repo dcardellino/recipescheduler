@@ -17,7 +17,13 @@
       "Bash(npm test *)",
       "Bash(node -e ' *)",
       "Bash(xargs basename *)",
-      "Bash(node -e \"const v = require\\('vitest'\\); console.log\\(Object.keys\\(v\\)\\)\")"
+      "Bash(node -e \"const v = require\\('vitest'\\); console.log\\(Object.keys\\(v\\)\\)\")",
+      "Bash(python3 *)",
+      "Read(//Users/dcardellino/Documents/Claude/Projects/RecipeScheduler/**)",
+      "Bash(rm -rf node_modules \".claude/worktrees/feature+recipe-components/node_modules\")",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

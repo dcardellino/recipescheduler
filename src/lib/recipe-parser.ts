@@ -233,7 +233,8 @@ function mapRecipe(
         ],
     steps,
     tagNames,
-  };
+    components: [],
+  } as ParsedRecipe;
 }
 
 function stringOrNull(value: unknown): string | null {

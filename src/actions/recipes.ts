@@ -14,6 +14,7 @@ import { requireHousehold, requireHouseholdAccess } from "@/lib/authz";
 import {
   recipeFormSchema,
   type RecipeFormInput,
+  type RecipeFormValues,
 } from "@/lib/schemas/recipe";
 
 async function upsertTagNames(
@@ -43,7 +44,7 @@ async function upsertTagNames(
 }
 
 export async function createRecipe(
-  input: RecipeFormInput,
+  input: RecipeFormValues,
 ): Promise<{ id: string }> {
   const ctx = await requireHousehold();
   const data = recipeFormSchema.parse(input);
@@ -115,7 +116,7 @@ export async function createRecipe(
 
 export async function updateRecipe(
   id: string,
-  input: RecipeFormInput,
+  input: RecipeFormValues,
 ): Promise<{ id: string }> {
   const ctx = await requireHousehold();
   const data = recipeFormSchema.parse(input);

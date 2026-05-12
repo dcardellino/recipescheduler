@@ -65,6 +65,14 @@ export const stepSchema = z.object({
 });
 export type StepInput = z.infer<typeof stepSchema>;
 
+export const componentSchema = z.object({
+  id: z.string().uuid().nullable().optional(),
+  name: trimmedString(100).min(1, "Name ist erforderlich."),
+  position: z.number().int().min(0),
+  ingredients: z.array(ingredientSchema),
+});
+export type ComponentInput = z.input<typeof componentSchema>;
+
 const tagNamesSchema = z
   .array(trimmedString(60).min(1, "Tag darf nicht leer sein."))
   .max(50, "Maximal 50 Tags pro Rezept.")
@@ -80,6 +88,11 @@ const tagNamesSchema = z
     }
     return result;
   });
+
+const recipeComponentsSchema = z
+  .array(componentSchema)
+  .optional()
+  .default([]);
 
 export const recipeFormSchema = z.object({
   title: trimmedString(200).min(1, "Titel ist erforderlich."),
@@ -135,9 +148,11 @@ export const recipeFormSchema = z.object({
     .min(1, "Mindestens eine Zutat."),
   steps: z.array(stepSchema),
   tagNames: tagNamesSchema,
+  components: recipeComponentsSchema,
 });
 
 export type RecipeFormInput = z.infer<typeof recipeFormSchema>;
+export type RecipeFormValues = z.input<typeof recipeFormSchema>;
 
 export const updateRecipeSchema = recipeFormSchema.extend({
   id: z.string().uuid("Ungültige ID."),
