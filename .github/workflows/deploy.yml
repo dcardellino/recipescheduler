@@ -70,13 +70,13 @@ jobs:
         echo "Deploying image: $IMAGE"
 
         curl -f -s -X POST \
-          "${{ secrets.DOKPLOY_URL }}/api/trpc/application.update" \
+          "${{ secrets.DOKPLOY_URL }}/api/application.update" \
           -H "Content-Type: application/json" \
           -H "x-api-key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}" \
           -d "{\"applicationId\":\"${{ secrets.DOKPLOY_APPLICATION_ID }}\",\"dockerImage\":\"$IMAGE\"}"
 
         curl -f -s -X POST \
-          "${{ secrets.DOKPLOY_URL }}/api/trpc/application.redeploy" \
+          "${{ secrets.DOKPLOY_URL }}/api/application.redeploy" \
           -H "Content-Type: application/json" \
           -H "x-api-key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}" \
           -d "{\"applicationId\":\"${{ secrets.DOKPLOY_APPLICATION_ID }}\"}"
