@@ -65,6 +65,14 @@ export const stepSchema = z.object({
 });
 export type StepInput = z.infer<typeof stepSchema>;
 
+export const componentSchema = z.object({
+  id: z.string().uuid().nullable().optional(),
+  name: trimmedString(100).min(1, "Name ist erforderlich."),
+  position: z.number().int().min(0),
+  ingredients: z.array(ingredientSchema),
+});
+export type ComponentInput = z.input<typeof componentSchema>;
+
 const tagNamesSchema = z
   .array(trimmedString(60).min(1, "Tag darf nicht leer sein."))
   .max(50, "Maximal 50 Tags pro Rezept.")
@@ -81,7 +89,12 @@ const tagNamesSchema = z
     return result;
   });
 
-export const recipeFormSchema = z.object({
+const recipeComponentsSchema = z
+  .array(componentSchema)
+  .optional()
+  .default([]);
+
+const recipeFormBase = z.object({
   title: trimmedString(200).min(1, "Titel ist erforderlich."),
   description: trimmedString(2000).optional().nullable(),
   sourceUrl: z
@@ -130,16 +143,34 @@ export const recipeFormSchema = z.object({
     .optional()
     .nullable(),
   notes: trimmedString(5000).optional().nullable(),
-  ingredients: z
-    .array(ingredientSchema)
-    .min(1, "Mindestens eine Zutat."),
+  ingredients: z.array(ingredientSchema),
   steps: z.array(stepSchema),
   tagNames: tagNamesSchema,
+  components: recipeComponentsSchema,
 });
 
-export type RecipeFormInput = z.infer<typeof recipeFormSchema>;
+const totalIngredientRefinement = (
+  data: { ingredients: unknown[]; components?: Array<{ ingredients: unknown[] }> },
+  ctx: z.RefinementCtx,
+) => {
+  const totalIngredients =
+    data.ingredients.length +
+    (data.components ?? []).reduce((sum, c) => sum + c.ingredients.length, 0);
+  if (totalIngredients === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Mindestens eine Zutat ist erforderlich.",
+      path: ["ingredients"],
+    });
+  }
+};
 
-export const updateRecipeSchema = recipeFormSchema.extend({
-  id: z.string().uuid("Ungültige ID."),
-});
+export type RecipeFormInput = z.infer<typeof recipeFormBase>;
+export type RecipeFormValues = z.input<typeof recipeFormBase>;
+
+export const recipeFormSchema = recipeFormBase.superRefine(totalIngredientRefinement);
+
+export const updateRecipeSchema = recipeFormBase
+  .extend({ id: z.string().uuid("Ungültige ID.") })
+  .superRefine(totalIngredientRefinement);
 export type UpdateRecipeInput = z.infer<typeof updateRecipeSchema>;

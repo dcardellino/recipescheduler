@@ -182,11 +182,21 @@ export const recipe = pgTable(
   ],
 );
 
+export const recipeComponent = pgTable("recipe_component", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  recipeId: uuid("recipe_id").notNull().references(() => recipe.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  position: integer("position").notNull().default(0),
+}, (t) => [
+  index("recipe_component_recipe_id_idx").on(t.recipeId),
+]);
+
 export const recipeIngredient = pgTable("recipe_ingredient", {
   id: uuid("id").primaryKey().defaultRandom(),
   recipeId: uuid("recipe_id")
     .notNull()
     .references(() => recipe.id, { onDelete: "cascade" }),
+  componentId: uuid("component_id").references(() => recipeComponent.id, { onDelete: "set null" }),
   position: integer("position").notNull().default(0),
   quantity: doublePrecision("quantity"),
   unit: text("unit"),
@@ -200,6 +210,7 @@ export const recipeStep = pgTable("recipe_step", {
   recipeId: uuid("recipe_id")
     .notNull()
     .references(() => recipe.id, { onDelete: "cascade" }),
+  componentId: uuid("component_id").references(() => recipeComponent.id, { onDelete: "set null" }),
   position: integer("position").notNull().default(0),
   text: text("text").notNull(),
 });
@@ -240,9 +251,16 @@ export const recipeRelations = relations(recipe, ({ one, many }) => ({
     fields: [recipe.createdBy],
     references: [user.id],
   }),
+  components: many(recipeComponent),
   ingredients: many(recipeIngredient),
   steps: many(recipeStep),
   tags: many(recipeTag),
+}));
+
+export const recipeComponentRelations = relations(recipeComponent, ({ one, many }) => ({
+  recipe: one(recipe, { fields: [recipeComponent.recipeId], references: [recipe.id] }),
+  ingredients: many(recipeIngredient),
+  steps: many(recipeStep),
 }));
 
 export const recipeIngredientRelations = relations(
@@ -252,6 +270,10 @@ export const recipeIngredientRelations = relations(
       fields: [recipeIngredient.recipeId],
       references: [recipe.id],
     }),
+    component: one(recipeComponent, {
+      fields: [recipeIngredient.componentId],
+      references: [recipeComponent.id],
+    }),
   }),
 );
 
@@ -259,6 +281,10 @@ export const recipeStepRelations = relations(recipeStep, ({ one }) => ({
   recipe: one(recipe, {
     fields: [recipeStep.recipeId],
     references: [recipe.id],
+  }),
+  component: one(recipeComponent, {
+    fields: [recipeStep.componentId],
+    references: [recipeComponent.id],
   }),
 }));
 
@@ -400,6 +426,8 @@ export type HouseholdMember = typeof householdMember.$inferSelect;
 export type HouseholdRole = (typeof householdRole.enumValues)[number];
 export type Recipe = typeof recipe.$inferSelect;
 export type NewRecipe = typeof recipe.$inferInsert;
+export type RecipeComponent = typeof recipeComponent.$inferSelect;
+export type NewRecipeComponent = typeof recipeComponent.$inferInsert;
 export type RecipeIngredient = typeof recipeIngredient.$inferSelect;
 export type RecipeStep = typeof recipeStep.$inferSelect;
 export type Tag = typeof tag.$inferSelect;
