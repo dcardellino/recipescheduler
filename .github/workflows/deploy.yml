@@ -76,7 +76,7 @@ jobs:
           -d "{\"applicationId\":\"${{ secrets.DOKPLOY_APPLICATION_ID }}\",\"dockerImage\":\"$IMAGE\"}"
 
         curl -f -s -X POST \
-          "${{ secrets.DOKPLOY_URL }}/api/application.redeploy" \
+          "${{ secrets.DOKPLOY_URL }}/api/application.deploy" \
           -H "Content-Type: application/json" \
           -H "x-api-key: ${{ secrets.DOKPLOY_AUTH_TOKEN }}" \
-          -d "{\"applicationId\":\"${{ secrets.DOKPLOY_APPLICATION_ID }}\"}"
+          -d "{\"applicationId\":\"${{ secrets.DOKPLOY_APPLICATION_ID }}\",\"title\":\"Deploy sha-${SHORT_SHA}\",\"description\":\"Automated deployment from GitHub Actions\"}"
