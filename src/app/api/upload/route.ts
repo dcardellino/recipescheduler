@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { getAuthUser } from "@/lib/authz";
 import { uploadFile } from "@/lib/storage";
 
 const MAX_SIZE = 10_000_000;
 
 export async function POST(request: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) {
+  const authUser = await getAuthUser();
+  if (!authUser) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { toast } from "sonner";
-import { authClient } from "@/lib/auth-client";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,7 +23,8 @@ export function AccountSection({
 
   async function handleSignOut() {
     try {
-      await authClient.signOut();
+      const supabase = createSupabaseBrowserClient();
+      await supabase.auth.signOut();
       router.push("/login");
       router.refresh();
     } catch {

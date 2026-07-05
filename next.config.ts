@@ -14,9 +14,11 @@ const securityHeaders = [
   },
 ];
 
-const publicStorageHost = (() => {
+// Supabase Storage serves public objects from
+// https://<project-ref>.supabase.co/storage/v1/object/public/...
+const supabaseImageHost = (() => {
   try {
-    const url = process.env.MINIO_PUBLIC_URL;
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     if (!url) return undefined;
     return new URL(url).hostname;
   } catch {
@@ -25,10 +27,15 @@ const publicStorageHost = (() => {
 })();
 
 const nextConfig: NextConfig = {
-  output: "standalone",
   images: {
-    remotePatterns: publicStorageHost
-      ? [{ protocol: "http", hostname: publicStorageHost }]
+    remotePatterns: supabaseImageHost
+      ? [
+          {
+            protocol: "https",
+            hostname: supabaseImageHost,
+            pathname: "/storage/v1/object/public/**",
+          },
+        ]
       : [],
   },
   async headers() {

@@ -1,6 +1,5 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getAuthUser } from "@/lib/authz";
 import { joinHousehold } from "@/actions/household";
 import { verifyInviteToken, JoseErrors } from "@/lib/invite-token";
 import { InviteLanding } from "@/components/auth/invite-landing";
@@ -61,13 +60,13 @@ export default async function InvitePage({
     );
   }
 
-  const session = await auth.api.getSession({ headers: await headers() });
+  const authUser = await getAuthUser();
 
-  if (session?.user) {
-    if (session.user.email !== payload.email) {
+  if (authUser) {
+    if (authUser.email !== payload.email) {
       return (
         <ErrorCard
-          message={`Dieser Link ist für ${payload.email} bestimmt. Du bist als ${session.user.email} eingeloggt. Bitte melde dich ab und öffne den Link erneut.`}
+          message={`Dieser Link ist für ${payload.email} bestimmt. Du bist als ${authUser.email} eingeloggt. Bitte melde dich ab und öffne den Link erneut.`}
         />
       );
     }

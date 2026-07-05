@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, Mail } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+import { requestLoginLink } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,17 +24,15 @@ export function InviteLanding({
     setStatus("sending");
     setErrorMsg(null);
 
-    const result = await authClient.signIn.magicLink({
+    const result = await requestLoginLink({
       email: invitedEmail,
-      callbackURL: `/invite?token=${encodeURIComponent(token)}`,
+      inviteToken: token,
+      next: `/invite?token=${encodeURIComponent(token)}`,
     });
 
-    if (result.error) {
+    if (!result.ok) {
       setStatus("error");
-      setErrorMsg(
-        result.error.message ??
-          "Etwas ist schief gelaufen. Bitte versuch es erneut.",
-      );
+      setErrorMsg(result.error);
       return;
     }
 

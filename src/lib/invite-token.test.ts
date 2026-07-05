@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 
 // Set secret before importing so server-only env check passes
 beforeEach(() => {
-  process.env.BETTER_AUTH_SECRET = "test-secret-for-invite-token-tests-32chars";
+  process.env.INVITE_TOKEN_SECRET = "test-secret-for-invite-token-tests-32chars";
 });
 
 // Dynamic import to avoid server-only check at module evaluation time
@@ -37,7 +37,7 @@ describe("invite-token", () => {
     const { JoseErrors } = await getModule();
     const { SignJWT } = await import("jose");
     const key = new TextEncoder().encode(
-      process.env.BETTER_AUTH_SECRET!,
+      process.env.INVITE_TOKEN_SECRET!,
     );
     const expiredToken = await new SignJWT({ email: "a@b.com", hid: "x" })
       .setProtectedHeader({ alg: "HS256" })

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,7 +28,8 @@ export function TopNav({
     (user.name?.trim().slice(0, 1) || user.email.slice(0, 1)).toUpperCase();
 
   async function handleSignOut() {
-    await authClient.signOut();
+    const supabase = createSupabaseBrowserClient();
+    await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
   }

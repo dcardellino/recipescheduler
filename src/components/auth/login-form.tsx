@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Mail } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+import { requestLoginLink } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -32,6 +33,7 @@ export function LoginForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const searchParams = useSearchParams();
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -42,16 +44,12 @@ export function LoginForm() {
     setStatus("sending");
     setErrorMsg(null);
 
-    const result = await authClient.signIn.magicLink({
-      email: values.email,
-      callbackURL: "/recipes",
-    });
+    const next = searchParams.get("next") ?? undefined;
+    const result = await requestLoginLink({ email: values.email, next });
 
-    if (result.error) {
+    if (!result.ok) {
       setStatus("error");
-      setErrorMsg(
-        result.error.message ?? "Etwas ist schief gelaufen. Bitte versuch es gleich nochmal.",
-      );
+      setErrorMsg(result.error);
       return;
     }
 
@@ -68,11 +66,7 @@ export function LoginForm() {
         <h2 className="font-heading text-2xl">Check dein Postfach</h2>
         <p className="text-muted-foreground">
           Wir haben dir einen Login-Link an <strong>{sentTo}</strong> geschickt.
-          Klick ihn an, um dich anzumelden. Der Link ist 15 Minuten gültig.
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Keine Mail bekommen? In der lokalen Entwicklung wird die URL im
-          Server-Terminal ausgegeben.
+          Klick ihn an, um dich anzumelden.
         </p>
         <Button
           variant="ghost"

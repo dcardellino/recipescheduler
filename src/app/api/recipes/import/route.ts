@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
+import { getAuthUser } from "@/lib/authz";
 import { fetchRecipeFromUrl } from "@/lib/recipe-parser";
 import { uploadImageFromUrl } from "@/lib/storage";
 
@@ -28,12 +27,12 @@ function rateLimitOk(userId: string): boolean {
 }
 
 export async function POST(request: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) {
+  const authUser = await getAuthUser();
+  if (!authUser) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!rateLimitOk(session.user.id)) {
+  if (!rateLimitOk(authUser.id)) {
     return NextResponse.json(
       { error: "Too many requests. Versuch's in einer Minute erneut." },
       { status: 429 },

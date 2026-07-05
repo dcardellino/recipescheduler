@@ -1,13 +1,12 @@
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { getSessionUser } from "@/lib/authz";
 import { getHouseholdSettings } from "@/lib/queries/settings";
 import { AccountSection } from "@/components/settings/account-section";
 import { HouseholdSection } from "@/components/settings/household-section";
 
 export default async function SettingsPage() {
-  const [settings, session] = await Promise.all([
+  const [settings, sessionUser] = await Promise.all([
     getHouseholdSettings(),
-    auth.api.getSession({ headers: await headers() }),
+    getSessionUser(),
   ]);
 
   return (
@@ -15,8 +14,8 @@ export default async function SettingsPage() {
       <h1 className="font-heading text-3xl">Einstellungen</h1>
       <HouseholdSection settings={settings} />
       <AccountSection
-        email={session!.user.email}
-        name={session!.user.name ?? null}
+        email={sessionUser!.email}
+        name={sessionUser!.name ?? null}
       />
     </div>
   );

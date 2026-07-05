@@ -1,22 +1,8 @@
 import "server-only";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
-const endpoint = process.env.MINIO_ENDPOINT ?? "http://localhost:9000";
-const accessKeyId = process.env.MINIO_ACCESS_KEY ?? "minio";
-const secretAccessKey = process.env.MINIO_SECRET_KEY ?? "minio12345";
-export const bucket = process.env.MINIO_BUCKET ?? "recipes";
-
-function proxyUrl(key: string) {
-  return `/api/storage/${key}`;
-}
-
-export const s3 = new S3Client({
-  region: "auto",
-  endpoint,
-  credentials: { accessKeyId, secretAccessKey },
-  forcePathStyle: true,
-});
+export const bucket = process.env.RECIPE_IMAGE_BUCKET ?? "recipe-images";
 
 export async function uploadFile(
   buffer: Buffer,
@@ -28,16 +14,17 @@ export async function uploadFile(
   const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
   const key = `${prefix}/${randomUUID()}-${safeName}`;
 
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      Body: buffer,
-      ContentType: contentType,
-    }),
-  );
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.storage
+    .from(bucket)
+    .upload(key, buffer, { contentType, upsert: false });
 
-  return { publicUrl: proxyUrl(`${bucket}/${key}`), key };
+  if (error) {
+    throw new Error(`Storage upload failed: ${error.message}`);
+  }
+
+  const { data } = supabase.storage.from(bucket).getPublicUrl(key);
+  return { publicUrl: data.publicUrl, key };
 }
 
 const MAX_IMAGE_BYTES = 10_000_000;
@@ -110,27 +97,17 @@ export async function uploadImageFromUrl(
     const ext = extensionFromContentType(contentType);
     const key = `${prefix}/${randomUUID()}${ext}`;
 
-    try {
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: bucket,
-          Key: key,
-          Body: buffer,
-          ContentType: contentType,
-        }),
-      );
-    } catch (err) {
-      return {
-        ok: false,
-        reason: "upload_failed",
-        detail: err instanceof Error ? err.message : String(err),
-      };
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase.storage
+      .from(bucket)
+      .upload(key, buffer, { contentType, upsert: false });
+
+    if (error) {
+      return { ok: false, reason: "upload_failed", detail: error.message };
     }
 
-    return {
-      ok: true,
-      publicUrl: proxyUrl(`${bucket}/${key}`),
-    };
+    const { data } = supabase.storage.from(bucket).getPublicUrl(key);
+    return { ok: true, publicUrl: data.publicUrl };
   } catch (err) {
     return {
       ok: false,
