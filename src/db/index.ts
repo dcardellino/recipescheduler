@@ -10,10 +10,12 @@ const globalForDb = globalThis as unknown as {
 
 function getClient() {
   if (globalForDb.client) return globalForDb.client;
-  const url = process.env.DATABASE_URL;
+  // POSTGRES_URL is the pooled connection provided by the Vercel↔Supabase
+  // integration; DATABASE_URL takes precedence for local/other setups.
+  const url = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
   if (!url) {
     throw new Error(
-      "DATABASE_URL is not set. Check .env.local in dev, or env vars in prod.",
+      "DATABASE_URL (or POSTGRES_URL) is not set. Check .env.local in dev, or env vars in prod.",
     );
   }
   const client = postgres(url, { max: 10, prepare: false });
