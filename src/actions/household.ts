@@ -10,37 +10,6 @@ import { sendHouseholdInviteEmail } from "@/lib/email";
 import { signInviteToken, verifyInviteToken } from "@/lib/invite-token";
 import { getSiteUrl } from "@/lib/site-url";
 
-export async function ensureHousehold(userId: string) {
-  const existing = await db
-    .select({ id: householdMember.id })
-    .from(householdMember)
-    .where(eq(householdMember.userId, userId))
-    .limit(1);
-
-  if (existing.length > 0) return;
-
-  const [u] = await db
-    .select({ name: user.name })
-    .from(user)
-    .where(eq(user.id, userId))
-    .limit(1);
-
-  const householdName = u?.name ? `Haushalt ${u.name}` : "Mein Haushalt";
-
-  await db.transaction(async (tx) => {
-    const [created] = await tx
-      .insert(household)
-      .values({ name: householdName, createdBy: userId })
-      .returning({ id: household.id });
-
-    await tx.insert(householdMember).values({
-      householdId: created.id,
-      userId,
-      role: "owner",
-    });
-  });
-}
-
 export async function inviteMember(email: string): Promise<void> {
   const ctx = await requireHousehold();
   assertOwnerRole(ctx);

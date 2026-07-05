@@ -7,7 +7,7 @@ import { user } from "@/db/schema";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { ensureProfile } from "@/actions/profile";
-import { ensureHousehold } from "@/actions/household";
+import { ensureHousehold } from "@/lib/provisioning";
 import { verifyInviteToken, JoseErrors } from "@/lib/invite-token";
 
 const emailSchema = z
