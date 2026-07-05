@@ -5,6 +5,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { db } from "@/db";
 import { householdMember, user } from "@/db/schema";
 import type { HouseholdRole } from "@/db/schema";
+import { ensureProfile } from "@/actions/profile";
+import { ensureHousehold } from "@/lib/provisioning";
 
 export class UnauthorizedError extends Error {
   constructor(message = "Nicht angemeldet") {
@@ -58,20 +60,35 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   };
 }
 
-export async function requireHousehold(): Promise<HouseholdContext> {
-  const authUser = await getAuthUser();
-  if (!authUser) {
-    throw new UnauthorizedError();
-  }
-
+async function selectMembership(userId: string) {
   const [membership] = await db
     .select({
       householdId: householdMember.householdId,
       role: householdMember.role,
     })
     .from(householdMember)
-    .where(eq(householdMember.userId, authUser.id))
+    .where(eq(householdMember.userId, userId))
     .limit(1);
+  return membership;
+}
+
+export async function requireHousehold(): Promise<HouseholdContext> {
+  const authUser = await getAuthUser();
+  if (!authUser) {
+    throw new UnauthorizedError();
+  }
+
+  let membership = await selectMembership(authUser.id);
+
+  // Self-heal: an authenticated user with no household means their sign-in
+  // provisioning never completed (e.g. a deploy where DB/Supabase env vars
+  // were missing). Provision now — idempotent and per-user serialized — so the
+  // user isn't stuck on "Kein Haushalt gefunden" until they sign in again.
+  if (!membership) {
+    await ensureProfile(authUser);
+    await ensureHousehold(authUser.id);
+    membership = await selectMembership(authUser.id);
+  }
 
   if (!membership) {
     throw new ForbiddenError("Kein Haushalt gefunden");
