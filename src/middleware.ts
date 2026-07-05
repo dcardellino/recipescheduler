@@ -55,8 +55,8 @@ function copyCookies(from: NextResponse, to: NextResponse): NextResponse {
 
 export const config = {
   matcher: [
-    // Match everything except: API routes (self-authorize), the auth callback,
-    // Next internals and static assets.
-    "/((?!api|auth/callback|_next|favicon.ico|manifest.json|icons|.*\\..*).*)",
+    // Match everything except: API routes (self-authorize), Next internals and
+    // static assets.
+    "/((?!api|_next|favicon.ico|manifest.json|icons|.*\\..*).*)",
   ],
 };

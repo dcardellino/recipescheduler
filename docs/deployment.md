@@ -32,14 +32,11 @@ als zusätzliche Absicherung ergänzt werden.
 3. **API-Keys** (Project Settings → API):
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
      `SUPABASE_SERVICE_ROLE_KEY` (geheim halten).
-4. **Auth → Custom SMTP**: Resend als SMTP-Provider hinterlegen (Host
-   `smtp.resend.com`, Port 465, User `resend`, Passwort = `RESEND_API_KEY`).
-   Absenderadresse = verifizierte Resend-Domain. Danach das
-   „Magic Link"-E-Mail-Template auf Deutsch anpassen.
-5. **Auth → URL Configuration**: Site URL = Produktions-URL, und die
-   Redirect-URL `https://<deine-domain>/auth/callback` (sowie
-   `http://localhost:3000/auth/callback` für lokale Entwicklung) erlauben.
-6. **Storage**: public Bucket `recipe-images` anlegen (Name muss zu
+4. **Auth → Providers**: Email-Provider aktiv lassen (Default). Login läuft über
+   E-Mail + Passwort — es wird für den Login **keine** E-Mail versendet, daher ist
+   Custom SMTP für Auth nicht erforderlich. (Resend wird nur für die App-eigenen
+   Haushalts-Invite-Mails genutzt.)
+5. **Storage**: public Bucket `recipe-images` anlegen (Name muss zu
    `RECIPE_IMAGE_BUCKET` passen).
 
 ---
@@ -92,13 +89,20 @@ DIRECT_URL=<supabase-direct> npm run db:migrate
 # 2. Dry-Run (keine Schreibvorgänge)
 OLD_DATABASE_URL=<alt-db> DIRECT_URL=<supabase-direct> \
 NEXT_PUBLIC_SUPABASE_URL=<url> SUPABASE_SERVICE_ROLE_KEY=<key> \
+MIGRATION_DEFAULT_PASSWORD=<start-passwort> \
   node scripts/migrate-to-supabase.mjs
 
 # 3. Migration ausführen
 OLD_DATABASE_URL=<alt-db> DIRECT_URL=<supabase-direct> \
 NEXT_PUBLIC_SUPABASE_URL=<url> SUPABASE_SERVICE_ROLE_KEY=<key> \
+MIGRATION_DEFAULT_PASSWORD=<start-passwort> \
   node scripts/migrate-to-supabase.mjs --commit
 ```
+
+**Passwörter:** Da die Auth auf E-Mail + Passwort läuft, bekommt jeder migrierte Nutzer
+das `MIGRATION_DEFAULT_PASSWORD` als Start-Passwort (individuell weiterzugeben). Ein
+Self-Service-Reset ist derzeit nicht implementiert — Passwörter lassen sich sonst nur über
+das Supabase-Dashboard ändern.
 
 **Bilder:** `recipe.image_url` zeigt in der Alt-DB auf den alten Storage-Proxy.
 Die Bild-Objekte müssen aus MinIO in den Supabase-Bucket kopiert und die URLs
@@ -109,16 +113,21 @@ hochladen). Das Skript lässt `image_url` unangetastet.
 
 ## 6. Auth-Flow (wie es funktioniert)
 
-1. Nutzer gibt E-Mail auf `/login` ein → Server-Action `requestLoginLink`.
-   - Bestehende Nutzer: Magic-Link wird gesendet.
-   - Neue Nutzer: nur mit gültigem, passendem Invite-Token (invite-only).
-2. Supabase versendet die Magic-Link-Mail (SMTP → Resend).
-3. Klick → `/auth/callback` tauscht den Code/Token gegen eine Session,
-   provisioniert Profil (`ensureProfile`) + Solo-Haushalt (`ensureHousehold`)
-   und leitet weiter (Standard `/recipes`).
-4. `src/middleware.ts` schützt alle `(app)`-Routen und aktualisiert die Session.
-5. Invites: Owner lädt per E-Mail ein (`inviteMember`), signierter JWT-Token
-   (`INVITE_TOKEN_SECRET`), Beitritt via `joinHousehold`.
+Authentifizierung per **E-Mail + Passwort** (Supabase Auth), Registrierung invite-only.
+
+1. **Login:** Nutzer gibt E-Mail + Passwort auf `/login` ein → Server-Action `signIn`
+   (`signInWithPassword`). Bei Erfolg Weiterleitung nach `/recipes`.
+2. **Registrierung (nur per Einladung):** Owner lädt per E-Mail ein (`inviteMember`),
+   signierter JWT-Token (`INVITE_TOKEN_SECRET`). Über den Invite-Link setzt die Person
+   Name + Passwort → Server-Action `registerWithInvite` legt den Account per Service-Role
+   an (`admin.createUser`, `email_confirm: true`), meldet ihn an, provisioniert Profil
+   (`ensureProfile`) + Solo-Haushalt (`ensureHousehold`) und tritt via `joinHousehold`
+   dem einladenden Haushalt bei.
+3. `src/middleware.ts` schützt alle `(app)`-Routen und aktualisiert die Session.
+
+Hinweis: Für den Login wird **keine E-Mail** versendet — Custom SMTP ist für Auth nicht
+nötig (Resend nur für Haushalts-Invite-Mails). Ein Passwort-Reset-Flow ist derzeit nicht
+implementiert; Passwörter lassen sich vorübergehend über das Supabase-Dashboard setzen.
 
 ---
 
@@ -147,10 +156,11 @@ Für ein Familien-Tool reichen die kostenlosen Tiers in der Regel aus.
 
 ## 9. Troubleshooting
 
-- **Login-Mail kommt nicht:** Supabase → Auth → Logs prüfen; SMTP-Konfiguration
-  (Resend) und verifizierte Absenderdomain checken.
-- **„Registrierung nur mit Einladung":** erwartetes Verhalten für unbekannte
-  E-Mails ohne Invite-Token.
+- **„E-Mail oder Passwort ist falsch":** Zugangsdaten prüfen; bei migrierten
+  Nutzern das `MIGRATION_DEFAULT_PASSWORD`. Passwort ggf. im Supabase-Dashboard
+  (Auth → Users) neu setzen.
+- **Registrierung nicht möglich:** erwartetes Verhalten ohne gültigen Invite-Token
+  (invite-only). Owner muss über die App einladen.
 - **DB-Verbindungsfehler auf Vercel:** `DATABASE_URL` muss der **Pooler** (6543)
   sein, nicht die Direct-Connection.
 - **Bilder laden nicht:** Bucket `recipe-images` muss public sein und der

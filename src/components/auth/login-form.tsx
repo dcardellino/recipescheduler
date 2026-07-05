@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Mail } from "lucide-react";
-import { requestLoginLink } from "@/actions/auth";
+import { Loader2 } from "lucide-react";
+import { signIn } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -23,63 +23,37 @@ const loginSchema = z.object({
     .string()
     .min(1, "Bitte gib deine E-Mail-Adresse ein.")
     .email("Das sieht nicht nach einer gültigen E-Mail-Adresse aus."),
+  password: z.string().min(1, "Bitte gib dein Passwort ein."),
 });
 
 type LoginInput = z.infer<typeof loginSchema>;
 
-type Status = "idle" | "sending" | "sent" | "error";
-
 export function LoginForm() {
-  const [status, setStatus] = useState<Status>("idle");
+  const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [sentTo, setSentTo] = useState<string | null>(null);
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "" },
+    defaultValues: { email: "", password: "" },
   });
 
   async function onSubmit(values: LoginInput) {
-    setStatus("sending");
+    setSubmitting(true);
     setErrorMsg(null);
 
-    const next = searchParams.get("next") ?? undefined;
-    const result = await requestLoginLink({ email: values.email, next });
+    const result = await signIn({ email: values.email, password: values.password });
 
     if (!result.ok) {
-      setStatus("error");
+      setSubmitting(false);
       setErrorMsg(result.error);
       return;
     }
 
-    setSentTo(values.email);
-    setStatus("sent");
-  }
-
-  if (status === "sent") {
-    return (
-      <div className="space-y-4 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
-          <Mail className="h-6 w-6" />
-        </div>
-        <h2 className="font-heading text-2xl">Check dein Postfach</h2>
-        <p className="text-muted-foreground">
-          Wir haben dir einen Login-Link an <strong>{sentTo}</strong> geschickt.
-          Klick ihn an, um dich anzumelden.
-        </p>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            setStatus("idle");
-            setSentTo(null);
-            form.reset();
-          }}
-        >
-          Andere E-Mail verwenden
-        </Button>
-      </div>
-    );
+    const next = searchParams.get("next");
+    router.push(next && next.startsWith("/") ? next : "/recipes");
+    router.refresh();
   }
 
   return (
@@ -97,7 +71,26 @@ export function LoginForm() {
                   inputMode="email"
                   autoComplete="email"
                   placeholder="deine@mail.de"
-                  disabled={status === "sending"}
+                  disabled={submitting}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Passwort</FormLabel>
+              <FormControl>
+                <Input
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  disabled={submitting}
                   {...field}
                 />
               </FormControl>
@@ -110,18 +103,14 @@ export function LoginForm() {
             {errorMsg}
           </p>
         ) : null}
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={status === "sending"}
-        >
-          {status === "sending" ? (
+        <Button type="submit" className="w-full" disabled={submitting}>
+          {submitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Link wird gesendet…
+              Anmelden…
             </>
           ) : (
-            "Magic Link senden"
+            "Anmelden"
           )}
         </Button>
       </form>

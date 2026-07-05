@@ -14,6 +14,9 @@
  *   DIRECT_URL                 Supabase direct connection (target, port 5432)
  *   NEXT_PUBLIC_SUPABASE_URL   Supabase project URL
  *   SUPABASE_SERVICE_ROLE_KEY  Supabase service-role key (creates auth users)
+ *   MIGRATION_DEFAULT_PASSWORD initial password set for every migrated user
+ *                              (auth is email + password; users log in with this
+ *                              and should change it afterwards)
  *
  * Usage:
  *   node scripts/migrate-to-supabase.mjs            # dry run (no writes)
@@ -42,6 +45,7 @@ const OLD_DATABASE_URL = requireEnv("OLD_DATABASE_URL");
 const DIRECT_URL = requireEnv("DIRECT_URL");
 const SUPABASE_URL = requireEnv("NEXT_PUBLIC_SUPABASE_URL");
 const SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+const DEFAULT_PASSWORD = requireEnv("MIGRATION_DEFAULT_PASSWORD");
 
 const src = postgres(OLD_DATABASE_URL, { max: 1 });
 const dst = postgres(DIRECT_URL, { max: 1 });
@@ -86,6 +90,7 @@ async function main() {
     }
     const { data, error } = await admin.auth.admin.createUser({
       email,
+      password: DEFAULT_PASSWORD,
       email_confirm: true,
       user_metadata: { name: u.name },
     });
