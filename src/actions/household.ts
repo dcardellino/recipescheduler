@@ -8,6 +8,7 @@ import { household, householdMember, user } from "@/db/schema";
 import { assertOwnerRole, requireHousehold } from "@/lib/authz";
 import { sendHouseholdInviteEmail } from "@/lib/email";
 import { signInviteToken, verifyInviteToken } from "@/lib/invite-token";
+import { getSiteUrl } from "@/lib/site-url";
 
 export async function ensureHousehold(userId: string) {
   const existing = await db
@@ -80,8 +81,7 @@ export async function inviteMember(email: string): Promise<void> {
     hid: ctx.householdId,
   });
 
-  const baseUrl = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
-  const url = `${baseUrl}/invite?token=${token}`;
+  const url = `${getSiteUrl()}/invite?token=${token}`;
 
   await sendHouseholdInviteEmail(
     parsedEmail,

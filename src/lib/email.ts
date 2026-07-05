@@ -6,31 +6,9 @@ const from = process.env.MAIL_FROM ?? "RecipeScheduler <onboarding@resend.dev>";
 
 const resend = apiKey ? new Resend(apiKey) : null;
 
-export async function sendMagicLinkEmail(email: string, url: string) {
-  if (!resend) {
-    // Dev fallback: log to server console so magic link works without Resend credentials.
-    console.log(
-      `\n[magic-link] → ${email}\n[magic-link] ${url}\n(no RESEND_API_KEY set — email transport stubbed; paste the URL above into your browser to sign in.)\n`,
-    );
-    return;
-  }
-
-  const { error } = await resend.emails.send({
-    from,
-    to: email,
-    subject: "Dein Login-Link",
-    html: `
-      <p>Hallo,</p>
-      <p>klick auf diesen Link, um dich in RecipeScheduler einzuloggen:</p>
-      <p><a href="${url}">${url}</a></p>
-      <p>Der Link ist 15 Minuten gültig. Wenn du die Anmeldung nicht angefordert hast, ignoriere diese Mail.</p>
-    `,
-  });
-
-  if (error) {
-    throw new Error(`Resend error: ${error.message ?? JSON.stringify(error)}`);
-  }
-}
+// Note: the passwordless sign-in ("magic link") email is sent by Supabase Auth
+// (configure Custom SMTP → Resend in the Supabase dashboard). This module only
+// sends app-generated household invite emails.
 
 export async function sendHouseholdInviteEmail(
   email: string,

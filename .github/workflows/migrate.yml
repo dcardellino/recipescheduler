@@ -1,0 +1,37 @@
+name: Run DB migrations
+
+# Vercel handles building & deploying the app via its Git integration.
+# This workflow only applies pending Drizzle migrations to the Supabase
+# database on pushes to the default branch. DIRECT_URL must be set as a
+# repository secret (Supabase direct connection, port 5432).
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "src/db/migrations/**"
+      - ".github/workflows/migrate.yml"
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    name: drizzle-kit migrate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply migrations
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: npm run db:migrate

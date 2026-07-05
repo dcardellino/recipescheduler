@@ -16,55 +16,17 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
-// --- better-auth core tables ---
-// Names match better-auth defaults (singular). See https://www.better-auth.com/docs/concepts/database
+// --- User profile ---
+// Mirrors Supabase Auth users (auth.users). `id` equals auth.users.id (uuid).
+// Sessions/identities are managed by Supabase in the `auth` schema, so no
+// session/account/verification tables live here anymore. Rows are provisioned
+// on first sign-in via ensureProfile() (see src/actions/profile.ts).
 
 export const user = pgTable("user", {
-  id: text("id").primaryKey(),
+  id: uuid("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
-export const session = pgTable("session", {
-  id: text("id").primaryKey(),
-  expiresAt: timestamp("expires_at").notNull(),
-  token: text("token").notNull().unique(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  ipAddress: text("ip_address"),
-  userAgent: text("user_agent"),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-});
-
-export const account = pgTable("account", {
-  id: text("id").primaryKey(),
-  accountId: text("account_id").notNull(),
-  providerId: text("provider_id").notNull(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  accessToken: text("access_token"),
-  refreshToken: text("refresh_token"),
-  idToken: text("id_token"),
-  accessTokenExpiresAt: timestamp("access_token_expires_at"),
-  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
-  scope: text("scope"),
-  password: text("password"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
-export const verification = pgTable("verification", {
-  id: text("id").primaryKey(),
-  identifier: text("identifier").notNull(),
-  value: text("value").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -76,7 +38,7 @@ export const householdRole = pgEnum("household_role", ["owner", "member"]);
 export const household = pgTable("household", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
-  createdBy: text("created_by").references(() => user.id, {
+  createdBy: uuid("created_by").references(() => user.id, {
     onDelete: "set null",
   }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -90,7 +52,7 @@ export const householdMember = pgTable(
     householdId: uuid("household_id")
       .notNull()
       .references(() => household.id, { onDelete: "cascade" }),
-    userId: text("user_id")
+    userId: uuid("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     role: householdRole("role").notNull().default("member"),
@@ -102,8 +64,6 @@ export const householdMember = pgTable(
 // --- Relations ---
 
 export const userRelations = relations(user, ({ many }) => ({
-  sessions: many(session),
-  accounts: many(account),
   memberships: many(householdMember),
 }));
 
@@ -165,7 +125,7 @@ export const recipe = pgTable(
     cookMinutes: integer("cook_minutes"),
     rating: smallint("rating"),
     notes: text("notes"),
-    createdBy: text("created_by").references(() => user.id, {
+    createdBy: uuid("created_by").references(() => user.id, {
       onDelete: "set null",
     }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -420,7 +380,6 @@ export const shoppingListItemRelations = relations(
 // --- Inferred types ---
 
 export type User = typeof user.$inferSelect;
-export type Session = typeof session.$inferSelect;
 export type Household = typeof household.$inferSelect;
 export type HouseholdMember = typeof householdMember.$inferSelect;
 export type HouseholdRole = (typeof householdRole.enumValues)[number];

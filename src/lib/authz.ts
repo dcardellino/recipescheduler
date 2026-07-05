@@ -1,9 +1,9 @@
 import "server-only";
-import { headers } from "next/headers";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { eq } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { db } from "@/db";
-import { householdMember } from "@/db/schema";
+import { householdMember, user } from "@/db/schema";
 import type { HouseholdRole } from "@/db/schema";
 
 export class UnauthorizedError extends Error {
@@ -26,9 +26,41 @@ export type HouseholdContext = {
   role: HouseholdRole;
 };
 
+/** Returns the current Supabase Auth user, or null if not signed in. */
+export async function getAuthUser(): Promise<SupabaseUser | null> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  return authUser;
+}
+
+export type SessionUser = { id: string; email: string; name: string | null };
+
+/**
+ * Returns the current user merged with their local profile (name/email), or
+ * null if not signed in. Used to render account UI.
+ */
+export async function getSessionUser(): Promise<SessionUser | null> {
+  const authUser = await getAuthUser();
+  if (!authUser) return null;
+
+  const [profile] = await db
+    .select({ name: user.name, email: user.email })
+    .from(user)
+    .where(eq(user.id, authUser.id))
+    .limit(1);
+
+  return {
+    id: authUser.id,
+    email: profile?.email ?? authUser.email ?? "",
+    name: profile?.name ?? null,
+  };
+}
+
 export async function requireHousehold(): Promise<HouseholdContext> {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) {
+  const authUser = await getAuthUser();
+  if (!authUser) {
     throw new UnauthorizedError();
   }
 
@@ -38,7 +70,7 @@ export async function requireHousehold(): Promise<HouseholdContext> {
       role: householdMember.role,
     })
     .from(householdMember)
-    .where(eq(householdMember.userId, session.user.id))
+    .where(eq(householdMember.userId, authUser.id))
     .limit(1);
 
   if (!membership) {
@@ -46,7 +78,7 @@ export async function requireHousehold(): Promise<HouseholdContext> {
   }
 
   return {
-    userId: session.user.id,
+    userId: authUser.id,
     householdId: membership.householdId,
     role: membership.role,
   };

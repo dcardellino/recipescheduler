@@ -9,8 +9,8 @@ export type InviteTokenPayload = {
 };
 
 function getKey(): Uint8Array {
-  const secret = process.env.BETTER_AUTH_SECRET;
-  if (!secret) throw new Error("BETTER_AUTH_SECRET not set");
+  const secret = process.env.INVITE_TOKEN_SECRET;
+  if (!secret) throw new Error("INVITE_TOKEN_SECRET not set");
   return new TextEncoder().encode(secret);
 }
 
