@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 export function AccountSection({
   email,
@@ -43,6 +44,10 @@ export function AccountSection({
             <p className="font-medium">{name}</p>
           )}
           <p className="text-sm text-muted-foreground">{email}</p>
+        </div>
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium">Erscheinungsbild</p>
+          <ThemeToggle />
         </div>
         <div>
           <Button variant="outline" onClick={() => void handleSignOut()}>

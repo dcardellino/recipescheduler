@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
 import { RecipeForm } from "@/components/recipe/recipe-form";
 import { getRecipe, listTags } from "@/lib/queries/recipes";
 import type { RecipeFormValues } from "@/lib/schemas/recipe";
@@ -68,7 +69,7 @@ export default async function EditRecipePage({
         <ChevronLeft className="size-4" />
         Zurück zum Rezept
       </Link>
-      <h1 className="font-heading text-2xl sm:text-3xl">Rezept bearbeiten</h1>
+      <PageHeader eyebrow="Bearbeiten" title="Rezept bearbeiten" />
       <RecipeForm
         mode="edit"
         recipeId={id}

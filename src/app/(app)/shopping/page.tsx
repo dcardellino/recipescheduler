@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { parseISO } from "date-fns";
 import { ShoppingBasket } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HistoryList } from "@/components/shopping/history-list";
 import { ShoppingList } from "@/components/shopping/shopping-list";
@@ -62,12 +63,11 @@ export default async function ShoppingPage({
 
   return (
     <section className="flex flex-col gap-4">
-      <header>
-        <h1 className="font-heading text-2xl sm:text-3xl">Einkaufsliste</h1>
-        <p className="text-sm text-muted-foreground">
-          {formatWeekTitle(weekStart)}
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Einkauf"
+        title="Einkaufsliste"
+        meta={formatWeekTitle(weekStart)}
+      />
 
       <Tabs defaultValue="current">
         <TabsList>
@@ -99,7 +99,7 @@ function EmptyState() {
       </p>
       <Link
         href="/week"
-        className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/80"
+        className="inline-flex h-8 items-center gap-1.5 rounded-sm bg-primary px-2.5 font-mono text-xs font-medium uppercase tracking-[0.08em] text-primary-foreground transition-colors hover:bg-accent-rust hover:text-on-accent"
       >
         Zum Wochenplan
       </Link>

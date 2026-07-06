@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,35 +59,38 @@ export function TopNav({
             );
           })}
         </nav>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                variant="ghost"
-                className="relative h-9 w-9 rounded-full p-0"
-              />
-            }
-          >
-            <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-primary text-primary-foreground">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel className="flex flex-col">
-              <span>{user.name ?? "Ohne Name"}</span>
-              <span className="text-xs font-normal text-muted-foreground">
-                {user.email}
-              </span>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={handleSignOut}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Abmelden
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  className="relative h-9 w-9 rounded-full p-0"
+                />
+              }
+            >
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="flex flex-col">
+                <span>{user.name ?? "Ohne Name"}</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  {user.email}
+                </span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Abmelden
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </header>
   );

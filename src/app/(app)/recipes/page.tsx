@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/page-header";
 import { RecipeGrid } from "@/components/recipe/recipe-grid";
 import { RecipeSearch } from "@/components/recipe/recipe-search";
 import { TagFilter } from "@/components/recipe/tag-filter";
@@ -40,13 +41,16 @@ export default async function RecipesPage({
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-heading text-3xl">Library</h1>
-        <Button render={<Link href="/recipes/new" />}>
-          <Plus className="size-4" />
-          Neues Rezept
-        </Button>
-      </header>
+      <PageHeader
+        eyebrow="Bibliothek"
+        title="Library"
+        actions={
+          <Button render={<Link href="/recipes/new" />}>
+            <Plus className="size-4" />
+            Neues Rezept
+          </Button>
+        }
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <RecipeSearch initialValue={q ?? ""} />

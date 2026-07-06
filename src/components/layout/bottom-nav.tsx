@@ -17,12 +17,14 @@ export function BottomNav() {
             <li key={item.href} className="flex-1">
               <Link
                 href={item.href}
-                className={`flex h-full flex-col items-center justify-center gap-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
-                  isActive ? "text-primary" : "text-muted-foreground"
+                className={`flex h-full flex-col items-center justify-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
+                  isActive ? "text-accent-rust" : "text-muted-foreground"
                 }`}
               >
                 <Icon className="h-5 w-5" aria-hidden />
-                <span>{item.label}</span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.08em]">
+                  {item.label}
+                </span>
               </Link>
             </li>
           );
