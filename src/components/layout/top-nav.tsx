@@ -50,7 +50,7 @@ export function TopNav({
                 href={item.href}
                 className={`rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
                   isActive
-                    ? "bg-accent text-accent-foreground"
+                    ? "bg-accent text-accent-rust"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >

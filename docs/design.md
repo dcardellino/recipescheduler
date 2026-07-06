@@ -10,7 +10,7 @@ colors:
   surface-raised-dark: "#241E1B"
   on-surface: "#1F1B19"
   on-surface-dark: "#EDE4DE"
-  on-surface-muted: "#8C8178"
+  on-surface-muted: "#6F645B"
   on-surface-muted-dark: "#A2958C"
   border: "#E6DAD4"
   border-dark: "#332A26"

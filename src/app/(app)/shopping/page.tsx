@@ -30,7 +30,7 @@ export default async function ShoppingPage({
           <p className="text-sm text-muted-foreground">
             Diese Liste existiert nicht mehr.
           </p>
-          <Link href="/shopping" className="text-sm text-primary underline">
+          <Link href="/shopping" className="text-sm text-accent-rust underline">
             Zurück zur aktuellen Liste
           </Link>
         </section>
