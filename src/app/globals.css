@@ -22,67 +22,112 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-info: var(--info);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Single rust accent + its foreground, raised paper, category palette */
+  --color-accent-rust: var(--accent-rust);
+  --color-on-accent: var(--on-accent);
+  --color-surface-raised: var(--surface-raised);
+  --color-cat-rust: var(--cat-rust);
+  --color-cat-forest: var(--cat-forest);
+  --color-cat-navy: var(--cat-navy);
+  --color-cat-gold: var(--cat-gold);
+  --color-cat-maroon: var(--cat-maroon);
+  --color-cat-teal: var(--cat-teal);
+  --color-cat-violet: var(--cat-violet);
+  --color-cat-stone: var(--cat-stone);
 
   --font-sans: var(--font-body);
   --font-body: var(--font-body);
   --font-heading: var(--font-heading);
   --font-mono: var(--font-mono);
 
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
 }
 
 :root {
-  --background: #faf7f2;
-  --foreground: #2a2724;
-  --card: #ffffff;
-  --card-foreground: #2a2724;
-  --popover: #ffffff;
-  --popover-foreground: #2a2724;
-  --primary: #c85a3e;
-  --primary-foreground: #ffffff;
-  --secondary: #6b7f3e;
-  --secondary-foreground: #ffffff;
-  --muted: #f5f1e8;
-  --muted-foreground: #6b665e;
-  --accent: #f5e3db;
-  --accent-foreground: #a84730;
-  --destructive: #b54a3d;
-  --destructive-foreground: #ffffff;
-  --success: #5a7f3e;
-  --warning: #d99b33;
-  --border: #e8e2d5;
-  --input: #e8e2d5;
-  --ring: #c85a3e;
-  --radius: 0.75rem;
+  --background: #f6ece8;
+  --foreground: #1f1b19;
+  --card: #fcf6f3;
+  --card-foreground: #1f1b19;
+  --popover: #fcf6f3;
+  --popover-foreground: #1f1b19;
+  --primary: #1f1b19;
+  --primary-foreground: #f6ece8;
+  --secondary: #ebded7;
+  --secondary-foreground: #1f1b19;
+  --muted: #efe4de;
+  --muted-foreground: #8c8178;
+  --accent: #eadcd5;
+  --accent-foreground: #1f1b19;
+  --destructive: #8f2c20;
+  --destructive-foreground: #fbf4f1;
+  --success: #3e6b4f;
+  --warning: #b57f2e;
+  --info: #3b5a6b;
+  --border: #e6dad4;
+  --input: #e6dad4;
+  --ring: #a8432b;
+
+  --accent-rust: #a8432b;
+  --on-accent: #fbf4f1;
+  --surface-raised: #fcf6f3;
+
+  --cat-rust: #a8432b;
+  --cat-forest: #3e6b4f;
+  --cat-navy: #2f4858;
+  --cat-gold: #b57f2e;
+  --cat-maroon: #6e2a2a;
+  --cat-teal: #2c6e6a;
+  --cat-violet: #6b5b95;
+  --cat-stone: #8c8178;
+
+  --radius: 0.25rem;
 }
 
 .dark {
-  --background: #1f1c18;
-  --foreground: #f5f1e8;
-  --card: #2a2724;
-  --card-foreground: #f5f1e8;
-  --popover: #2a2724;
-  --popover-foreground: #f5f1e8;
-  --primary: #d97859;
-  --primary-foreground: #1f1c18;
-  --secondary: #8a9f57;
-  --secondary-foreground: #1f1c18;
-  --muted: #2f2b27;
-  --muted-foreground: #a8a198;
-  --accent: #3a302c;
-  --accent-foreground: #f5f1e8;
-  --destructive: #c26353;
-  --destructive-foreground: #f5f1e8;
-  --success: #8aa865;
-  --warning: #e5b466;
-  --border: #3a342d;
-  --input: #3a342d;
-  --ring: #d97859;
+  --background: #1a1614;
+  --foreground: #ede4de;
+  --card: #241e1b;
+  --card-foreground: #ede4de;
+  --popover: #241e1b;
+  --popover-foreground: #ede4de;
+  --primary: #ede4de;
+  --primary-foreground: #1a1614;
+  --secondary: #2e2621;
+  --secondary-foreground: #ede4de;
+  --muted: #241e1b;
+  --muted-foreground: #a2958c;
+  --accent: #2e2621;
+  --accent-foreground: #ede4de;
+  --destructive: #c75144;
+  --destructive-foreground: #1a1614;
+  --success: #5e8c6f;
+  --warning: #d19e4e;
+  --info: #6e93a6;
+  --border: #332a26;
+  --input: #332a26;
+  --ring: #c75a3e;
+
+  --accent-rust: #c75a3e;
+  --on-accent: #1a1614;
+  --surface-raised: #241e1b;
+
+  /* cat-* dark: derived/lightened — the Atlas spec ships no dark cat variants (tune later) */
+  --cat-rust: #c75a3e;
+  --cat-forest: #5e8c6f;
+  --cat-navy: #4a6b7d;
+  --cat-gold: #d19e4e;
+  --cat-maroon: #a85248;
+  --cat-teal: #4e9a95;
+  --cat-violet: #9384be;
+  --cat-stone: #a2958c;
 }
 
 @layer base {
