@@ -1,5 +1,6 @@
 import { getSessionUser } from "@/lib/authz";
 import { getHouseholdSettings } from "@/lib/queries/settings";
+import { PageHeader } from "@/components/layout/page-header";
 import { AccountSection } from "@/components/settings/account-section";
 import { HouseholdSection } from "@/components/settings/household-section";
 
@@ -11,7 +12,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-heading text-3xl">Einstellungen</h1>
+      <PageHeader eyebrow="Konto" title="Einstellungen" />
       <HouseholdSection settings={settings} />
       <AccountSection
         email={sessionUser!.email}

@@ -12,7 +12,7 @@ type RecipeGridProps = {
 export function RecipeGrid({ recipes, isFiltered }: RecipeGridProps) {
   if (recipes.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border bg-muted/20 py-14 text-center">
+      <div className="flex flex-col items-center gap-3 rounded-md border border-dashed border-border bg-muted/20 py-14 text-center">
         <BookOpen className="size-10 text-muted-foreground" />
         {isFiltered ? (
           <>

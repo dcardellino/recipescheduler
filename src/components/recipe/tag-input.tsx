@@ -68,7 +68,7 @@ export function TagInput({
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
         {value.map((name) => (
-          <Badge key={name} variant="secondary" className="gap-1 pr-1">
+          <Badge key={name} variant="secondary" className="gap-1 rounded-sm pr-1">
             <TagIcon className="size-3" />
             {name}
             {!disabled && (
@@ -130,7 +130,7 @@ export function TagInput({
                             className={cn(
                               "size-3",
                               isSelected
-                                ? "text-primary"
+                                ? "text-accent-rust"
                                 : "text-muted-foreground",
                             )}
                           />

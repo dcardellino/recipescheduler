@@ -58,7 +58,7 @@ export function MemberRow({
     <div className="flex items-center justify-between gap-3 rounded-md py-2">
       <div className="flex items-center gap-3">
         <Avatar className="h-8 w-8">
-          <AvatarFallback className="bg-secondary text-secondary-foreground text-xs">
+          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
             {initials}
           </AvatarFallback>
         </Avatar>

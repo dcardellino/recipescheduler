@@ -84,7 +84,7 @@ export function ImportForm({ availableTags, onFallback }: ImportFormProps) {
   if (state.status === "success") {
     return (
       <div className="space-y-4">
-        <div className="rounded-md border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+        <div className="rounded-md border border-accent-rust/30 bg-accent-rust/5 px-4 py-3 text-sm">
           Rezept aus <span className="font-medium break-all">{url}</span>{" "}
           geladen. Du kannst alles bearbeiten, bevor du speicherst.
         </div>

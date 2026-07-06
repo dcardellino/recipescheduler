@@ -98,7 +98,7 @@ export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
       onDrop={onDrop}
       className={cn(
         "flex aspect-[16/9] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-border bg-muted/30 transition-colors hover:bg-muted/50",
-        dragging && "border-primary bg-primary/5",
+        dragging && "border-accent-rust bg-accent-rust/5",
         (disabled || uploading) && "pointer-events-none opacity-60",
       )}
       onClick={() => inputRef.current?.click()}

@@ -11,7 +11,7 @@ type HistoryListProps = {
 export function HistoryList({ lists }: HistoryListProps) {
   if (lists.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-border bg-muted/20 px-3 py-10 text-center text-sm text-muted-foreground">
+      <p className="rounded-md border border-dashed border-border bg-muted/20 px-3 py-10 text-center text-sm text-muted-foreground">
         Noch keine früheren Listen.
       </p>
     );
@@ -27,7 +27,7 @@ export function HistoryList({ lists }: HistoryListProps) {
           <li key={list.id}>
             <Link
               href={href}
-              className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5 transition-colors hover:bg-muted/40"
+              className="flex items-center gap-3 rounded-md border border-border bg-card px-3 py-2.5 transition-colors hover:bg-muted/40"
             >
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium">KW {kw}</div>

@@ -40,6 +40,7 @@ export function WeekHeader({ weekStart, children }: WeekHeaderProps) {
           <ChevronLeft />
         </Button>
         <div className="min-w-0 flex-1">
+          <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Woche</span>
           <h1 className="font-heading text-xl sm:text-2xl leading-tight">
             {formatWeekTitle(weekStart)}
           </h1>

@@ -4,6 +4,8 @@ import {
   type IngredientCategoryValue,
 } from "@/lib/schemas/recipe";
 import type { ShoppingItem } from "@/lib/queries/shopping";
+import { catForCategory } from "@/lib/category-colors";
+import { cn } from "@/lib/utils";
 
 type CategoryGroupProps = {
   category: IngredientCategoryValue;
@@ -19,11 +21,15 @@ export function CategoryGroup({
   if (items.length === 0) return null;
   const label = INGREDIENT_CATEGORY_LABELS[category];
   const doneCount = items.filter((i) => i.checked).length;
+  const cat = catForCategory(category);
 
   return (
-    <section className="rounded-lg border border-border bg-card">
-      <header className="flex items-baseline justify-between border-b border-border px-3 py-2">
-        <h2 className="font-heading text-sm">{label}</h2>
+    <section className="rounded-md border border-border bg-card">
+      <header className="flex items-center justify-between border-b border-border px-3 py-2">
+        <h2 className={cn("flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground")}>
+          <span className={cn("size-2 shrink-0 rounded-full", cat.dot)} />
+          {label}
+        </h2>
         <span className="text-xs text-muted-foreground">
           {doneCount}/{items.length}
         </span>

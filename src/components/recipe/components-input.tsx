@@ -83,7 +83,7 @@ function ComponentSection({
     });
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+    <div className="rounded-md border border-border bg-card p-4 space-y-3">
       <div className="flex items-center gap-2">
         <Input
           placeholder="Name der Komponente (z.B. Vorteig)"

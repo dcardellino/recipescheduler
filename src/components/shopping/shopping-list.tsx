@@ -13,7 +13,7 @@ export function ShoppingList({ list, readOnly = false }: ShoppingListProps) {
     <div className="flex flex-col gap-3">
       <ProgressBar done={list.done} total={list.total} />
       {list.total === 0 ? (
-        <p className="rounded-lg border border-dashed border-border bg-muted/20 px-3 py-8 text-center text-sm text-muted-foreground">
+        <p className="rounded-md border border-dashed border-border bg-muted/20 px-3 py-8 text-center text-sm text-muted-foreground">
           Noch keine Einträge.
         </p>
       ) : (

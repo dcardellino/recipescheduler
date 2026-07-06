@@ -78,7 +78,7 @@ export function ItemRow({ item, readOnly = false }: ItemRowProps) {
         >
           {item.name}
           {item.customAdded && (
-            <span className="ml-2 rounded-full bg-secondary/40 px-1.5 py-0.5 text-[10px] text-secondary-foreground">
+            <span className="ml-2 rounded-sm border border-border bg-transparent px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
               manuell
             </span>
           )}
