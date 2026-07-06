@@ -30,8 +30,8 @@ export function DayColumn({
   return (
     <section
       className={cn(
-        "flex flex-col gap-2 rounded-lg border bg-card p-2",
-        isToday ? "border-primary/40" : "border-border",
+        "flex flex-col gap-2 rounded-md border bg-card p-2",
+        isToday ? "border-accent-rust/50" : "border-border",
         variant === "list" && "sm:p-3",
       )}
     >
@@ -39,8 +39,8 @@ export function DayColumn({
         <div>
           <div
             className={cn(
-              "text-xs font-medium uppercase",
-              isToday ? "text-primary" : "text-muted-foreground",
+              "text-xs font-mono uppercase tracking-[0.08em]",
+              isToday ? "text-accent-rust" : "text-muted-foreground",
             )}
           >
             {formatShortWeekday(day.date)}
@@ -48,7 +48,7 @@ export function DayColumn({
           <div className="text-sm">{formatDayNumber(day.date)}</div>
         </div>
         {isToday && (
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+          <span className="rounded-sm bg-accent-rust/10 px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-[0.08em] text-accent-rust">
             Heute
           </span>
         )}

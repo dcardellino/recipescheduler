@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { catForTag } from "@/lib/category-colors";
 import { cn } from "@/lib/utils";
 
 type TagFilterProps = {
@@ -47,10 +48,11 @@ export function TagFilter({ tags, selectedIds }: TagFilterProps) {
             <Badge
               variant={isActive ? "default" : "secondary"}
               className={cn(
-                "cursor-pointer transition-opacity",
+                "cursor-pointer gap-1 transition-opacity",
                 !isActive && "hover:opacity-80",
               )}
             >
+              <span className={cn("size-1.5 shrink-0 rounded-full", catForTag(t.name).dot)} />
               {t.name}
             </Badge>
           </button>

@@ -71,7 +71,7 @@ export function RatingInput({
               className={cn(
                 "transition-colors",
                 isActive
-                  ? "fill-primary text-primary"
+                  ? "fill-accent-rust text-accent-rust"
                   : "fill-transparent text-muted-foreground",
               )}
             />

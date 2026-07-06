@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { DeleteRecipeDialog } from "@/components/recipe/delete-recipe-dialog";
 import { INGREDIENT_CATEGORY_LABELS } from "@/lib/schemas/recipe";
 import type { RecipeDetail as RecipeDetailData } from "@/lib/queries/recipes";
+import { catForTag } from "@/lib/category-colors";
 import { cn } from "@/lib/utils";
 
 type RecipeDetailProps = {
@@ -83,7 +84,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
                   className={cn(
                     "size-4",
                     n <= (recipe.rating ?? 0)
-                      ? "fill-primary text-primary"
+                      ? "fill-accent-rust text-accent-rust"
                       : "text-muted-foreground",
                   )}
                 />
@@ -95,7 +96,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
               href={recipe.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-primary hover:underline"
+              className="inline-flex items-center gap-1 text-accent-rust hover:underline"
             >
               <ExternalLink className="size-3" />
               Quelle
@@ -105,7 +106,8 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
         {recipe.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {recipe.tags.map((t) => (
-              <Badge key={t.id} variant="secondary">
+              <Badge key={t.id} variant="secondary" className="gap-1">
+                <span className={cn("size-1.5 shrink-0 rounded-full", catForTag(t.name).dot)} />
                 {t.name}
               </Badge>
             ))}
@@ -255,7 +257,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
             <ol className="space-y-4">
               {recipe.steps.map((step, i) => (
                 <li key={step.id} className="flex gap-3">
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-rust/10 text-sm font-medium text-accent-rust">
                     {i + 1}
                   </span>
                   <p className="flex-1 whitespace-pre-wrap text-sm leading-relaxed">

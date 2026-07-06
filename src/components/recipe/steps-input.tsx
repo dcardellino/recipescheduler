@@ -26,7 +26,7 @@ export function StepsInput() {
             key={field.id}
             className="flex gap-2 rounded-md border border-border bg-card p-3"
           >
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-rust/10 text-sm font-medium text-accent-rust">
               {index + 1}
             </span>
             <div className="flex-1">

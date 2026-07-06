@@ -13,7 +13,7 @@ export function ProgressBar({ done, total, className }: ProgressBarProps) {
   return (
     <div
       className={cn(
-        "sticky top-0 z-10 flex flex-col gap-1 rounded-lg border border-border bg-card/95 px-3 py-2 backdrop-blur",
+        "sticky top-0 z-10 flex flex-col gap-1 rounded-md border border-border bg-card/95 px-3 py-2 backdrop-blur",
         className,
       )}
     >
@@ -24,17 +24,17 @@ export function ProgressBar({ done, total, className }: ProgressBarProps) {
         <span
           className={cn(
             "text-xs text-muted-foreground",
-            allDone && "text-primary",
+            allDone && "text-accent-rust",
           )}
         >
           {pct}%
         </span>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+      <div className="h-1.5 w-full overflow-hidden rounded-sm bg-muted">
         <div
           className={cn(
-            "h-full rounded-full transition-all",
-            allDone ? "bg-primary" : "bg-secondary",
+            "h-full rounded-sm transition-all",
+            allDone ? "bg-success" : "bg-accent-rust",
           )}
           style={{ width: `${pct}%` }}
         />

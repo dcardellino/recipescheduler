@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Clock, ImageOff, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { catForTag } from "@/lib/category-colors";
 import { cn } from "@/lib/utils";
 
 type RecipeCardProps = {
@@ -28,7 +29,7 @@ export function RecipeCard({
   return (
     <Link
       href={`/recipes/${id}`}
-      className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="group flex flex-col overflow-hidden rounded-md border border-border bg-card transition-colors hover:border-foreground/25 focus-visible:ring-2 focus-visible:ring-accent-rust focus-visible:outline-none"
     >
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
         {imageUrl ? (
@@ -62,7 +63,7 @@ export function RecipeCard({
               <Star
                 className={cn(
                   "size-3",
-                  rating > 0 ? "fill-primary text-primary" : "",
+                  rating > 0 ? "fill-accent-rust text-accent-rust" : "",
                 )}
               />
               {rating}
@@ -72,7 +73,8 @@ export function RecipeCard({
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {tags.slice(0, 3).map((t) => (
-              <Badge key={t.id} variant="secondary" className="text-xs">
+              <Badge key={t.id} variant="secondary" className="gap-1 text-xs">
+                <span className={cn("size-1.5 shrink-0 rounded-full", catForTag(t.name).dot)} />
                 {t.name}
               </Badge>
             ))}
