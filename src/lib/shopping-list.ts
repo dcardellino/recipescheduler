@@ -3,6 +3,7 @@ import {
   INGREDIENT_CATEGORIES,
   type IngredientCategoryValue,
 } from "@/lib/schemas/recipe";
+import type { AiShoppingOptimizeData } from "@/lib/ai-providers/shopping-optimize-types";
 
 export type RawIngredient = {
   name: string;
@@ -203,11 +204,100 @@ export function aggregateIngredients(
     });
   }
 
-  results.sort((a, b) => {
+  sortAggregated(results);
+
+  return results;
+}
+
+function sortAggregated(items: AggregatedItem[]): void {
+  items.sort((a, b) => {
     const catDiff = CATEGORY_ORDER[a.category] - CATEGORY_ORDER[b.category];
     if (catDiff !== 0) return catDiff;
     return a.name.localeCompare(b.name, "de-DE");
   });
+}
 
-  return results;
+// Same grouping key aggregateIngredients() uses: items are only combinable
+// (their quantities can be safely summed) if they share it.
+function itemGroupKey(item: AggregatedItem): string {
+  const normalizedUnit = normalizeUnit(item.unit);
+  const family = unitFamily(normalizedUnit);
+  return family.base !== null ? `__${family.base}` : (normalizedUnit ?? "");
+}
+
+/**
+ * Applies AI-suggested "Feinschliff" operations (renames, merges, category
+ * fixes) to an already-aggregated shopping list. Only index-based operations
+ * are trusted from the AI — all quantity arithmetic happens here, reusing
+ * the same unit-conversion logic as aggregateIngredients(). Merge suggestions
+ * for incompatible units (e.g. "Stück" vs "g") are silently skipped rather
+ * than guessed at.
+ */
+export function applyOptimization(
+  items: AggregatedItem[],
+  optimization: AiShoppingOptimizeData,
+): AggregatedItem[] {
+  const working: AggregatedItem[] = items.map((item) => ({
+    ...item,
+    sourceRecipeIds: [...item.sourceRecipeIds],
+  }));
+  const removed = new Set<number>();
+
+  for (const merge of optimization.merges) {
+    const keep = working[merge.keepIndex];
+    if (!keep || removed.has(merge.keepIndex)) continue;
+
+    const keepKey = itemGroupKey(keep);
+    const compatibleIndices = merge.mergeIndices.filter((idx) => {
+      if (idx === merge.keepIndex || removed.has(idx)) return false;
+      const candidate = working[idx];
+      return candidate !== undefined && itemGroupKey(candidate) === keepKey;
+    });
+    if (compatibleIndices.length === 0) continue;
+
+    const keepFamily = unitFamily(normalizeUnit(keep.unit));
+    let hasQuantity = keep.quantity !== null;
+    let totalInBase = keep.quantity !== null ? keep.quantity * keepFamily.factor : 0;
+
+    for (const idx of compatibleIndices) {
+      const candidate = working[idx];
+      if (candidate.quantity !== null) {
+        const candidateFamily = unitFamily(normalizeUnit(candidate.unit));
+        totalInBase += candidate.quantity * candidateFamily.factor;
+        hasQuantity = true;
+      }
+      for (const id of candidate.sourceRecipeIds) {
+        if (!keep.sourceRecipeIds.includes(id)) keep.sourceRecipeIds.push(id);
+      }
+      removed.add(idx);
+    }
+
+    if (hasQuantity) {
+      if (keepFamily.base !== null) {
+        const promoted = promoteUnit(keepFamily.base, totalInBase);
+        keep.quantity = promoted.quantity;
+        keep.unit = promoted.unit;
+      } else {
+        keep.quantity = round2(totalInBase);
+      }
+    }
+  }
+
+  for (const rename of optimization.renames) {
+    const item = working[rename.index];
+    if (item && !removed.has(rename.index)) {
+      item.name = rename.cleanName;
+    }
+  }
+
+  for (const fix of optimization.categoryFixes) {
+    const item = working[fix.index];
+    if (item && !removed.has(fix.index) && item.category === "andere") {
+      item.category = fix.category;
+    }
+  }
+
+  const result = working.filter((_, idx) => !removed.has(idx));
+  sortAggregated(result);
+  return result;
 }

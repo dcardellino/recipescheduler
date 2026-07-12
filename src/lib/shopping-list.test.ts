@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { aggregateIngredients, type RawIngredient } from "./shopping-list";
+import {
+  aggregateIngredients,
+  applyOptimization,
+  type AggregatedItem,
+  type RawIngredient,
+} from "./shopping-list";
+import type { AiShoppingOptimizeData } from "./ai-providers/shopping-optimize-types";
 
 function ing(
   partial: Partial<RawIngredient> & Pick<RawIngredient, "name">,
@@ -232,5 +238,91 @@ describe("aggregateIngredients", () => {
     expect(result).toHaveLength(1);
     expect(result[0].quantity).toBeNull();
     expect(result[0].sourceRecipeIds).toHaveLength(2);
+  });
+});
+
+function item(partial: Partial<AggregatedItem> & Pick<AggregatedItem, "name">): AggregatedItem {
+  return {
+    quantity: null,
+    unit: null,
+    category: "andere",
+    sourceRecipeIds: ["r1"],
+    ...partial,
+  };
+}
+
+function optimization(
+  partial: Partial<AiShoppingOptimizeData> = {},
+): AiShoppingOptimizeData {
+  return { renames: [], merges: [], categoryFixes: [], ...partial };
+}
+
+describe("applyOptimization", () => {
+  it("renames an item without touching quantity or unit", () => {
+    const result = applyOptimization(
+      [item({ name: "Zwiebel, fein gehackt", quantity: 2, unit: "Stück" })],
+      optimization({ renames: [{ index: 0, cleanName: "Zwiebel" }] }),
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      name: "Zwiebel",
+      quantity: 2,
+      unit: "Stück",
+    });
+  });
+
+  it("merges items with compatible units and sums quantities", () => {
+    const result = applyOptimization(
+      [
+        item({ name: "Knoblauch", quantity: 100, unit: "g", sourceRecipeIds: ["r1"] }),
+        item({
+          name: "Knoblauchzehen",
+          quantity: 50,
+          unit: "g",
+          sourceRecipeIds: ["r2"],
+        }),
+      ],
+      optimization({ merges: [{ keepIndex: 0, mergeIndices: [1] }] }),
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ name: "Knoblauch", quantity: 150, unit: "g" });
+    expect(result[0].sourceRecipeIds.sort()).toEqual(["r1", "r2"]);
+  });
+
+  it("skips a merge suggestion with incompatible units", () => {
+    const result = applyOptimization(
+      [
+        item({ name: "Zwiebel", quantity: 2, unit: "Stück" }),
+        item({ name: "Zwiebel", quantity: 300, unit: "g" }),
+      ],
+      optimization({ merges: [{ keepIndex: 0, mergeIndices: [1] }] }),
+    );
+    expect(result).toHaveLength(2);
+  });
+
+  it("applies a category fix only when the item is currently 'andere'", () => {
+    const result = applyOptimization(
+      [
+        item({ name: "Zitronengras", category: "andere" }),
+        item({ name: "Karotte", category: "gemuese" }),
+      ],
+      optimization({
+        categoryFixes: [
+          { index: 0, category: "gewuerze" },
+          { index: 1, category: "obst" },
+        ],
+      }),
+    );
+    expect(result.find((r) => r.name === "Zitronengras")?.category).toBe("gewuerze");
+    expect(result.find((r) => r.name === "Karotte")?.category).toBe("gemuese");
+  });
+
+  it("ignores merge indices that are out of range or self-referencing", () => {
+    const result = applyOptimization(
+      [item({ name: "Mehl", quantity: 200, unit: "g" })],
+      optimization({ merges: [{ keepIndex: 0, mergeIndices: [0, 99] }] }),
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0].quantity).toBe(200);
   });
 });

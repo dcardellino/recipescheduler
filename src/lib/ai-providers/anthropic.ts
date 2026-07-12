@@ -3,10 +3,19 @@ import Anthropic from "@anthropic-ai/sdk";
 import { INGREDIENT_CATEGORIES } from "@/lib/schemas/recipe";
 import { SYSTEM_PROMPT, aiRecipeSchema, buildParsedRecipe } from "@/lib/ai-providers/types";
 import type { ProviderInput, ProviderResult } from "@/lib/ai-providers/types";
+import {
+  SHOPPING_OPTIMIZE_SYSTEM_PROMPT,
+  aiShoppingOptimizeSchema,
+} from "@/lib/ai-providers/shopping-optimize-types";
+import type {
+  ShoppingOptimizeItemInput,
+  ShoppingOptimizeResult,
+} from "@/lib/ai-providers/shopping-optimize-types";
 
 const MODEL = "claude-sonnet-5";
 const MAX_TOKENS = 4096;
 const RECIPE_TOOL_NAME = "return_recipe";
+const SHOPPING_OPTIMIZE_TOOL_NAME = "return_optimization";
 
 let client: Anthropic | null = null;
 
@@ -143,4 +152,92 @@ export async function extractRecipeAnthropic(input: ProviderInput): Promise<Prov
   }
 
   return { ok: true, recipe, tokensUsed };
+}
+
+const SHOPPING_OPTIMIZE_TOOL: Anthropic.Tool = {
+  name: SHOPPING_OPTIMIZE_TOOL_NAME,
+  description: "Gibt Feinschliff-Vorschläge für eine Einkaufsliste zurück.",
+  input_schema: {
+    type: "object",
+    properties: {
+      renames: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            index: { type: "integer" },
+            cleanName: { type: "string" },
+          },
+          required: ["index", "cleanName"],
+        },
+      },
+      merges: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            keepIndex: { type: "integer" },
+            mergeIndices: { type: "array", items: { type: "integer" } },
+          },
+          required: ["keepIndex", "mergeIndices"],
+        },
+      },
+      categoryFixes: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            index: { type: "integer" },
+            category: { type: "string", enum: INGREDIENT_CATEGORIES },
+          },
+          required: ["index", "category"],
+        },
+      },
+    },
+    required: ["renames", "merges", "categoryFixes"],
+  },
+};
+
+export async function optimizeShoppingListAnthropic(
+  items: ShoppingOptimizeItemInput[],
+): Promise<ShoppingOptimizeResult> {
+  const text = `Einkaufsliste:\n${JSON.stringify(items)}\n\nAnalysiere die Liste und rufe das Tool ${SHOPPING_OPTIMIZE_TOOL_NAME} auf.`;
+
+  let response: Anthropic.Message;
+  try {
+    response = await getClient().messages.create({
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      system: SHOPPING_OPTIMIZE_SYSTEM_PROMPT,
+      tools: [SHOPPING_OPTIMIZE_TOOL],
+      tool_choice: { type: "tool", name: SHOPPING_OPTIMIZE_TOOL_NAME },
+      messages: [{ role: "user", content: text }],
+    });
+  } catch (err) {
+    console.error("[ai-providers/anthropic] shopping optimize request failed", err);
+    return { ok: false, tokensUsed: 0 };
+  }
+
+  const tokensUsed =
+    (response.usage?.input_tokens ?? 0) + (response.usage?.output_tokens ?? 0);
+
+  const toolUse = response.content.find(
+    (block): block is Anthropic.ToolUseBlock =>
+      block.type === "tool_use" && block.name === SHOPPING_OPTIMIZE_TOOL_NAME,
+  );
+  if (!toolUse) {
+    console.warn("[ai-providers/anthropic] no tool_use block in shopping optimize response");
+    return { ok: false, tokensUsed };
+  }
+
+  const parsed = aiShoppingOptimizeSchema.safeParse(toolUse.input);
+  if (!parsed.success) {
+    console.warn(
+      "[ai-providers/anthropic] shopping optimize tool output failed validation",
+      parsed.error.flatten(),
+    );
+    return { ok: false, tokensUsed };
+  }
+
+  return { ok: true, optimization: parsed.data, tokensUsed };
 }

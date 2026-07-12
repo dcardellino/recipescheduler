@@ -135,3 +135,85 @@ describe("extractRecipeAnthropic", () => {
     expect(result.tokensUsed).toBe(0);
   });
 });
+
+describe("optimizeShoppingListAnthropic", () => {
+  const originalKey = process.env.ANTHROPIC_API_KEY;
+
+  beforeEach(() => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    mockCreate.mockReset();
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    process.env.ANTHROPIC_API_KEY = originalKey;
+  });
+
+  function toolUseResponse(input: unknown, usage = { input_tokens: 80, output_tokens: 20 }) {
+    return {
+      content: [{ type: "tool_use", name: "return_optimization", input }],
+      usage,
+    };
+  }
+
+  it("returns a validated optimization when the tool output is well-formed", async () => {
+    mockCreate.mockResolvedValue(
+      toolUseResponse({
+        renames: [{ index: 0, cleanName: "Zwiebel" }],
+        merges: [{ keepIndex: 1, mergeIndices: [2] }],
+        categoryFixes: [{ index: 3, category: "gewuerze" }],
+      }),
+    );
+
+    const { optimizeShoppingListAnthropic } = await import("./anthropic");
+    const result = await optimizeShoppingListAnthropic([
+      { index: 0, name: "Zwiebel, fein gehackt", quantity: 1, unit: "Stück", category: "gemuese" },
+    ]);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.optimization.renames).toEqual([{ index: 0, cleanName: "Zwiebel" }]);
+    expect(result.optimization.merges).toEqual([{ keepIndex: 1, mergeIndices: [2] }]);
+    expect(result.tokensUsed).toBe(100);
+  });
+
+  it("fails gracefully when the tool output has an invalid category", async () => {
+    mockCreate.mockResolvedValue(
+      toolUseResponse({
+        renames: [],
+        merges: [],
+        categoryFixes: [{ index: 0, category: "nicht_existierende_kategorie" }],
+      }),
+    );
+
+    const { optimizeShoppingListAnthropic } = await import("./anthropic");
+    const result = await optimizeShoppingListAnthropic([
+      { index: 0, name: "Etwas", quantity: null, unit: null, category: "andere" },
+    ]);
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("fails gracefully when no tool_use block is returned", async () => {
+    mockCreate.mockResolvedValue({
+      content: [{ type: "text", text: "Keine Vorschläge." }],
+      usage: { input_tokens: 10, output_tokens: 5 },
+    });
+
+    const { optimizeShoppingListAnthropic } = await import("./anthropic");
+    const result = await optimizeShoppingListAnthropic([]);
+
+    expect(result.ok).toBe(false);
+    expect(result.tokensUsed).toBe(15);
+  });
+
+  it("fails gracefully when the Anthropic API call throws", async () => {
+    mockCreate.mockRejectedValue(new Error("rate limited"));
+
+    const { optimizeShoppingListAnthropic } = await import("./anthropic");
+    const result = await optimizeShoppingListAnthropic([]);
+
+    expect(result.ok).toBe(false);
+    expect(result.tokensUsed).toBe(0);
+  });
+});

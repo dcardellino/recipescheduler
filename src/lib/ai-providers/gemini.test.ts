@@ -139,3 +139,82 @@ describe("extractRecipeGemini", () => {
     expect(result.tokensUsed).toBe(0);
   });
 });
+
+describe("optimizeShoppingListGemini", () => {
+  const originalKey = process.env.GEMINI_API_KEY;
+
+  beforeEach(() => {
+    process.env.GEMINI_API_KEY = "test-key";
+    mockGenerateContent.mockReset();
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    process.env.GEMINI_API_KEY = originalKey;
+  });
+
+  function jsonResponse(data: unknown, usageMetadata = { promptTokenCount: 60, candidatesTokenCount: 15 }) {
+    return { text: JSON.stringify(data), usageMetadata };
+  }
+
+  it("returns a validated optimization when the response JSON is well-formed", async () => {
+    mockGenerateContent.mockResolvedValue(
+      jsonResponse({
+        renames: [{ index: 0, cleanName: "Zwiebel" }],
+        merges: [],
+        categoryFixes: [{ index: 1, category: "gewuerze" }],
+      }),
+    );
+
+    const { optimizeShoppingListGemini } = await import("./gemini");
+    const result = await optimizeShoppingListGemini([
+      { index: 0, name: "Zwiebel, fein gehackt", quantity: 1, unit: "Stück", category: "gemuese" },
+    ]);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.optimization.renames).toEqual([{ index: 0, cleanName: "Zwiebel" }]);
+    expect(result.optimization.categoryFixes).toEqual([{ index: 1, category: "gewuerze" }]);
+    expect(result.tokensUsed).toBe(75);
+  });
+
+  it("fails gracefully when the response has an invalid category", async () => {
+    mockGenerateContent.mockResolvedValue(
+      jsonResponse({
+        renames: [],
+        merges: [],
+        categoryFixes: [{ index: 0, category: "nicht_existierende_kategorie" }],
+      }),
+    );
+
+    const { optimizeShoppingListGemini } = await import("./gemini");
+    const result = await optimizeShoppingListGemini([
+      { index: 0, name: "Etwas", quantity: null, unit: null, category: "andere" },
+    ]);
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("fails gracefully when the response text is not valid JSON", async () => {
+    mockGenerateContent.mockResolvedValue({
+      text: "Keine Vorschläge.",
+      usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 },
+    });
+
+    const { optimizeShoppingListGemini } = await import("./gemini");
+    const result = await optimizeShoppingListGemini([]);
+
+    expect(result.ok).toBe(false);
+    expect(result.tokensUsed).toBe(15);
+  });
+
+  it("fails gracefully when the Gemini API call throws", async () => {
+    mockGenerateContent.mockRejectedValue(new Error("rate limited"));
+
+    const { optimizeShoppingListGemini } = await import("./gemini");
+    const result = await optimizeShoppingListGemini([]);
+
+    expect(result.ok).toBe(false);
+    expect(result.tokensUsed).toBe(0);
+  });
+});
