@@ -2,6 +2,7 @@ import { parseHTML } from "linkedom";
 import { parseIngredient } from "@/lib/ingredient-parser";
 import { parseISODuration } from "@/lib/ingredient-normalizer";
 import { classifyIngredient } from "@/lib/ingredient-categorizer";
+import { fetchHtml } from "@/lib/fetch-html";
 import type { RecipeFormInput } from "@/lib/schemas/recipe";
 
 export type ParsedRecipe = Omit<RecipeFormInput, "rating" | "notes" | "tagNames"> & {
@@ -21,35 +22,6 @@ export type ParseSuccess = {
 };
 
 export type ParseResult = ParseSuccess | ParseFailure;
-
-const FETCH_TIMEOUT_MS = 10_000;
-const MAX_HTML_BYTES = 5_000_000;
-
-async function fetchHtml(url: string): Promise<string | null> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "de-DE,de;q=0.9,en;q=0.8",
-      },
-      signal: controller.signal,
-      redirect: "follow",
-    });
-    if (!res.ok) return null;
-    const buffer = await res.arrayBuffer();
-    if (buffer.byteLength > MAX_HTML_BYTES) return null;
-    return new TextDecoder("utf-8").decode(buffer);
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
 
 export async function fetchRecipeFromUrl(url: string): Promise<ParseResult> {
   const html = await fetchHtml(url);

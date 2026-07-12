@@ -446,29 +446,47 @@ Phasen-basierter Bauplan. Jede Phase produziert eine lauffähige, demofähige Ve
 **Demo:** Screenshot einer Instagram-Story mit Rezept → 5 Sekunden später als Eintrag in der Library.
 **Reference-Sections:** PRD § 6 (FR-028).
 
-- [ ] **TASK-088** — Provider-Wahl: Claude API (Anthropic) oder OpenAI
-  Files: `src/lib/ai-import.ts`
-  Notes: Claude Sonnet 4.6 mit Vision. Tool-Use für strukturiertes Output (JSON-Schema matching RecipeSchema).
+- [x] **TASK-088** — Provider-Wahl: Claude API (Anthropic) oder OpenAI
+  Files: `src/lib/ai-import.ts`, `src/lib/ai-providers/{types,anthropic,gemini}.ts`
+  Notes: Statt einer einmaligen Provider-Wahl ist der Provider jetzt zur Laufzeit per
+  `AI_PROVIDER=anthropic|gemini`-Env-Var umschaltbar (kein automatischer Fallback).
+  Claude Sonnet und Gemini nutzen beide Vision + strukturierten JSON-Output
+  (Tool-Use bzw. `responseSchema`), validiert gegen dasselbe Zod-Schema in
+  `src/lib/ai-providers/types.ts`. OpenAI wurde nicht umgesetzt — Gemini statt
+  OpenAI gewählt (Nutzerentscheidung).
 
 - [ ] **TASK-089** — UI: "AI-Import"-Tab in /recipes/new
   Files: `src/components/recipe/ai-import-form.tsx`
-  Notes: Drei Input-Varianten: URL, Foto-Upload, Freitext-Textarea.
+  Notes: **Abweichung vom ursprünglichen Plan:** Statt eines separaten Tabs mit drei
+  Input-Varianten (URL/Foto/Freitext) wurde der Instagram-Import bewusst in den
+  bestehenden "Importieren"-Tab integriert (`src/components/recipe/import-form.tsx`).
+  Die API-Route erkennt `instagram.com`-URLs am Hostname und schaltet automatisch
+  auf den KI-Pfad um — kein manuelles Foto-Upload/Freitext-Feld in der UI, rein
+  URL-basiert. Siehe TASK-090/091. Nutzerentscheidung, daher bewusst nicht abgehakt.
 
-- [ ] **TASK-090** — Screenshot-Analyse (Vision-Input)
-  Files: `src/app/api/recipes/ai-import/route.ts`
-  Notes: Image zu Minio → an LLM mit Prompt "extrahiere Rezept als JSON"
+- [x] **TASK-090** — Bild-Analyse (Vision-Input)
+  Files: `src/lib/instagram-import.ts`, `src/lib/ai-import.ts`
+  Notes: Statt Foto-Upload durch die Nutzerin: `og:image` des Instagram-Posts wird
+  automatisch geladen und bei fehlender/unbrauchbarer Caption per Claude Vision
+  analysiert.
 
-- [ ] **TASK-091** — Freitext-Analyse
-  Files: gleiche Route
-  Notes: Text-Input → LLM → strukturiertes JSON.
+- [x] **TASK-091** — Freitext-Analyse
+  Files: `src/lib/instagram-import.ts`, `src/lib/ai-import.ts`
+  Notes: `og:description` (Instagram-Caption) wird automatisch geladen, bereinigt
+  und bei Erfolg per Claude strukturiert. `src/app/api/recipes/import/route.ts`
+  routet `instagram.com`-URLs automatisch auf diesen Pfad statt auf den
+  JSON-LD-Parser.
 
-- [ ] **TASK-092** — Cost-Tracking (simpler Counter pro Household/Monat)
-  Files: `src/db/schema.ts` (aiUsage Tabelle), `src/lib/ai-import.ts`
-  Notes: Schutz vor versehentlicher Explosion der API-Kosten.
+- [x] **TASK-092** — Cost-Tracking (simpler Counter pro Household/Monat)
+  Files: `src/db/schema.ts` (`aiImportUsage` Tabelle), `src/lib/ai-usage.ts`
+  Notes: Limit 40 KI-Importe pro Haushalt / rollierendem 30-Tage-Fenster, zusätzlich
+  zum bestehenden In-Memory-Rate-Limit (10/min/User) in `route.ts`.
 
-- [ ] **TASK-093** — Preview-Form für User-Review (reuse aus URL-Import)
+- [x] **TASK-093** — Preview-Form für User-Review (reuse aus URL-Import)
   Files: bestehende Komponenten
-  Notes: AI kann falsch liegen → User muss immer bestätigen.
+  Notes: `fetchInstagramRecipe()` liefert denselben `ParseResult`-Vertrag wie
+  `fetchRecipeFromUrl()` — die bestehende `RecipeForm`-Vorschau/Bearbeitung aus dem
+  URL-Import wird unverändert wiederverwendet, keine neue UI nötig.
 
 **Phase 7 Summary Prompt für Claude Code:**
 > "Phase 7 umsetzen: AI-Import via Claude Vision + Text. Für Screenshots, Instagram-Screenshots, und Freitext. User bestätigt immer vor Speichern."
