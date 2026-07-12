@@ -5,9 +5,11 @@ import { INGREDIENT_CATEGORIES } from "@/lib/schemas/recipe";
 import { SYSTEM_PROMPT, aiRecipeSchema, buildParsedRecipe } from "@/lib/ai-providers/types";
 import type { ProviderInput, ProviderResult } from "@/lib/ai-providers/types";
 
-// Google renames/replaces model IDs fairly often; override via GEMINI_MODEL if
-// this default drifts out of date. Current list: https://ai.google.dev/gemini-api/docs/models
-const DEFAULT_MODEL = "gemini-3-flash";
+// "gemini-flash-latest" is Google's rolling alias for the current Flash model
+// (auto-updates on new releases, per https://ai.google.dev/gemini-api/docs/models)
+// so it stays valid without code changes. Override via GEMINI_MODEL for a
+// pinned version instead.
+const DEFAULT_MODEL = "gemini-flash-latest";
 
 let client: GoogleGenAI | null = null;
 
