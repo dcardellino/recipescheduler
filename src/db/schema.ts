@@ -414,6 +414,47 @@ export const aiImportUsageRelations = relations(aiImportUsage, ({ one }) => ({
   }),
 }));
 
+// --- Application domain: AI shopping-list optimization usage tracking ---
+// One row per "Mit KI aufräumen" attempt on a shopping list, used to enforce
+// a per-household monthly cap on paid Claude/Gemini API calls (see
+// src/lib/ai-usage.ts).
+
+export const aiShoppingOptimizeUsage = pgTable(
+  "ai_shopping_optimize_usage",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    householdId: uuid("household_id")
+      .notNull()
+      .references(() => household.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    success: boolean("success").notNull(),
+    tokensUsed: integer("tokens_used"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("idx_ai_shopping_optimize_usage_household_created").on(
+      t.householdId,
+      t.createdAt.desc(),
+    ),
+  ],
+);
+
+export const aiShoppingOptimizeUsageRelations = relations(
+  aiShoppingOptimizeUsage,
+  ({ one }) => ({
+    household: one(household, {
+      fields: [aiShoppingOptimizeUsage.householdId],
+      references: [household.id],
+    }),
+    user: one(user, {
+      fields: [aiShoppingOptimizeUsage.userId],
+      references: [user.id],
+    }),
+  }),
+);
+
 // --- Inferred types ---
 
 export type User = typeof user.$inferSelect;
@@ -437,3 +478,6 @@ export type ShoppingListItem = typeof shoppingListItem.$inferSelect;
 export type NewShoppingListItem = typeof shoppingListItem.$inferInsert;
 export type AiImportUsage = typeof aiImportUsage.$inferSelect;
 export type NewAiImportUsage = typeof aiImportUsage.$inferInsert;
+export type AiShoppingOptimizeUsage = typeof aiShoppingOptimizeUsage.$inferSelect;
+export type NewAiShoppingOptimizeUsage =
+  typeof aiShoppingOptimizeUsage.$inferInsert;

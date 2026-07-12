@@ -1,5 +1,6 @@
 import { AddCustomItem } from "@/components/shopping/add-custom-item";
 import { CategoryGroup } from "@/components/shopping/category-group";
+import { OptimizeShoppingListButton } from "@/components/shopping/optimize-shopping-list-button";
 import { ProgressBar } from "@/components/shopping/progress-bar";
 import type { ShoppingListView } from "@/lib/queries/shopping";
 
@@ -27,6 +28,9 @@ export function ShoppingList({ list, readOnly = false }: ShoppingListProps) {
             />
           ))}
         </div>
+      )}
+      {!readOnly && list.total > 0 && (
+        <OptimizeShoppingListButton listId={list.id} />
       )}
       {!readOnly && <AddCustomItem shoppingListId={list.id} />}
     </div>

@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, between, eq, sql } from "drizzle-orm";
+import { and, asc, between, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
@@ -22,8 +22,20 @@ import {
   type GenerateShoppingListInput,
   type ToggleItemInput,
 } from "@/lib/schemas/shopping";
-import { aggregateIngredients, type RawIngredient } from "@/lib/shopping-list";
+import {
+  aggregateIngredients,
+  applyOptimization,
+  type AggregatedItem,
+  type RawIngredient,
+} from "@/lib/shopping-list";
 import type { IngredientCategoryValue } from "@/lib/schemas/recipe";
+import { optimizeShoppingListWithAiProvider } from "@/lib/ai-shopping-optimize";
+import {
+  getMonthlyAiShoppingOptimizeCount,
+  recordAiShoppingOptimizeUsage,
+} from "@/lib/ai-usage";
+
+const AI_SHOPPING_OPTIMIZE_MONTHLY_LIMIT = 20;
 
 async function assertItemBelongsToHousehold(
   itemId: string,
@@ -190,6 +202,117 @@ export async function generateShoppingList(
       revalidatePath("/week");
       return result;
     });
+}
+
+type OptimizableItem = AggregatedItem & { id: string; checked: boolean };
+
+export async function optimizeShoppingListWithAi(listId: string): Promise<void> {
+  const ctx = await requireHousehold();
+  await assertListBelongsToHousehold(listId, ctx);
+
+  const usageCount = await getMonthlyAiShoppingOptimizeCount(ctx.householdId);
+  if (usageCount >= AI_SHOPPING_OPTIMIZE_MONTHLY_LIMIT) {
+    throw new Error(
+      "KI-Optimierungs-Limit für diesen Monat erreicht. Die Liste bleibt unverändert.",
+    );
+  }
+
+  const rows = await db
+    .select()
+    .from(shoppingListItem)
+    .where(
+      and(
+        eq(shoppingListItem.shoppingListId, listId),
+        eq(shoppingListItem.customAdded, false),
+      ),
+    )
+    .orderBy(asc(shoppingListItem.position));
+
+  if (rows.length === 0) return;
+
+  const items: OptimizableItem[] = rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    quantity: r.quantity,
+    unit: r.unit,
+    category: r.category as IngredientCategoryValue,
+    sourceRecipeIds: r.sourceRecipeIds,
+    checked: r.checked,
+  }));
+
+  const result = await optimizeShoppingListWithAiProvider(
+    items.map((item, index) => ({
+      index,
+      name: item.name,
+      quantity: item.quantity,
+      unit: item.unit,
+      category: item.category,
+    })),
+  );
+
+  await recordAiShoppingOptimizeUsage(
+    ctx.householdId,
+    ctx.userId,
+    result.ok,
+    result.tokensUsed,
+  );
+
+  if (!result.ok) {
+    throw new Error("KI-Optimierung ist fehlgeschlagen. Versuch's später erneut.");
+  }
+
+  const optimized = applyOptimization(
+    items as unknown as AggregatedItem[],
+    result.optimization,
+  ) as unknown as OptimizableItem[];
+
+  const keptIds = new Set(optimized.map((item) => item.id));
+  const removedIds = rows
+    .map((r) => r.id)
+    .filter((id) => !keptIds.has(id));
+
+  await db.transaction(async (tx) => {
+    if (removedIds.length > 0) {
+      await tx
+        .delete(shoppingListItem)
+        .where(inArray(shoppingListItem.id, removedIds));
+    }
+
+    for (let i = 0; i < optimized.length; i++) {
+      const item = optimized[i];
+      await tx
+        .update(shoppingListItem)
+        .set({
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          category: item.category,
+          sourceRecipeIds: item.sourceRecipeIds,
+          position: i,
+        })
+        .where(eq(shoppingListItem.id, item.id));
+    }
+
+    const customItems = await tx
+      .select({ id: shoppingListItem.id })
+      .from(shoppingListItem)
+      .where(
+        and(
+          eq(shoppingListItem.shoppingListId, listId),
+          eq(shoppingListItem.customAdded, true),
+        ),
+      )
+      .orderBy(asc(shoppingListItem.position));
+
+    for (let i = 0; i < customItems.length; i++) {
+      await tx
+        .update(shoppingListItem)
+        .set({ position: optimized.length + i })
+        .where(eq(shoppingListItem.id, customItems[i].id));
+    }
+  });
+
+  revalidatePath("/shopping");
 }
 
 export async function toggleItemChecked(
