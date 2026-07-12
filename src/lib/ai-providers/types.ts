@@ -48,7 +48,8 @@ Regeln:
 - Wenn eine Angabe fehlt (z.B. Zeiten, Beschreibung), lass das Feld leer bzw. null statt zu raten. Ausnahme: "servings" muss immer eine Zahl sein — schätze 2, wenn nichts angegeben ist.
 - "category" pro Zutat muss exakt einer der vorgegebenen Enum-Werte sein; wähle die beste Übereinstimmung, im Zweifel "andere".
 - Enthält der Inhalt kein erkennbares Rezept (z.B. reiner Werbetext ohne Zutaten/Zubereitung), rufe das Tool trotzdem auf, aber lasse "ingredients" und "steps" leere Arrays.
-- Antworte auf Deutsch, außer der Originaltext liegt bereits auf Deutsch vor — dann übernimm ihn möglichst unverändert.`;
+- Antworte auf Deutsch, außer der Originaltext liegt bereits auf Deutsch vor — dann übernimm ihn möglichst unverändert.
+- Wandle britische/US-amerikanische Maßeinheiten ins metrische System um (cups, oz, lb, fl oz, inch) — passe dabei Zahl UND Einheit gemeinsam an, benenne nicht nur die Einheit um. Näherungswerte sind in Ordnung, sinnvoll runden. Richtwerte: 1 cup Mehl ≈ 120 g, 1 cup Zucker ≈ 200 g, 1 cup Butter ≈ 227 g, 1 cup Flüssigkeit ≈ 240 ml, 1 oz ≈ 28 g, 1 fl oz ≈ 30 ml, 1 lb ≈ 450 g, 1 inch ≈ 2,5 cm. EL/TL (tablespoon/teaspoon) bleiben als Löffelmaß bestehen, nicht in ml umrechnen. Fahrenheit-Temperaturen im Zubereitungstext (z.B. "375°F") in Celsius umrechnen (Formel: (°F − 32) × 5/9) und den Text entsprechend anpassen (z.B. "Bei 190°C backen").`;
 
 /**
  * Maps validated tool/response output to the app's ParsedRecipe shape. Shared
