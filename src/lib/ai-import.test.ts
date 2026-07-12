@@ -1,137 +1,60 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-const mockCreate = vi.fn();
+const mockAnthropic = vi.fn();
+const mockGemini = vi.fn();
 
-vi.mock("@anthropic-ai/sdk", () => ({
-  default: class MockAnthropic {
-    messages = { create: mockCreate };
-  },
+vi.mock("@/lib/ai-providers/anthropic", () => ({
+  extractRecipeAnthropic: mockAnthropic,
+}));
+vi.mock("@/lib/ai-providers/gemini", () => ({
+  extractRecipeGemini: mockGemini,
 }));
 
-describe("extractRecipeFromInstagram", () => {
-  const originalKey = process.env.ANTHROPIC_API_KEY;
+describe("extractRecipeFromInstagram (provider dispatcher)", () => {
+  const originalProvider = process.env.AI_PROVIDER;
 
   beforeEach(() => {
-    process.env.ANTHROPIC_API_KEY = "test-key";
-    mockCreate.mockReset();
-    vi.resetModules();
+    mockAnthropic.mockReset().mockResolvedValue({ ok: false, tokensUsed: 0 });
+    mockGemini.mockReset().mockResolvedValue({ ok: false, tokensUsed: 0 });
   });
 
   afterEach(() => {
-    process.env.ANTHROPIC_API_KEY = originalKey;
+    process.env.AI_PROVIDER = originalProvider;
   });
 
-  function toolUseResponse(input: unknown, usage = { input_tokens: 100, output_tokens: 50 }) {
-    return {
-      content: [{ type: "tool_use", name: "return_recipe", input }],
-      usage,
-    };
-  }
+  const input = {
+    captionText: "...",
+    sourceUrl: "https://www.instagram.com/p/abc123/",
+    fallbackTitle: null,
+  };
 
-  it("returns a validated recipe when the tool output is well-formed", async () => {
-    mockCreate.mockResolvedValue(
-      toolUseResponse({
-        title: "Creamy Garlic Pasta",
-        description: "Schnelle Pasta mit Knoblauch.",
-        servings: 2,
-        prepMinutes: 10,
-        cookMinutes: 15,
-        ingredients: [
-          { name: "Spaghetti", quantity: 500, unit: "g", note: null, category: "trocken_backen" },
-          { name: "Knoblauch", quantity: 2, unit: null, note: null, category: "gemuese" },
-        ],
-        steps: [{ text: "Pasta kochen." }, { text: "Knoblauch anbraten." }],
-        tagNames: ["Pasta", "Schnell"],
-      }),
-    );
-
+  it("defaults to Anthropic when AI_PROVIDER is unset", async () => {
+    delete process.env.AI_PROVIDER;
     const { extractRecipeFromInstagram } = await import("./ai-import");
-    const result = await extractRecipeFromInstagram({
-      captionText: "Creamy Garlic Pasta – 500g Spaghetti, 2 Knoblauchzehen...",
-      sourceUrl: "https://www.instagram.com/p/abc123/",
-      fallbackTitle: "foodblog on Instagram",
-    });
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.recipe.title).toBe("Creamy Garlic Pasta");
-    expect(result.recipe.servings).toBe(2);
-    expect(result.recipe.ingredients).toHaveLength(2);
-    expect(result.recipe.ingredients[0].category).toBe("trocken_backen");
-    expect(result.recipe.sourceUrl).toBe("https://www.instagram.com/p/abc123/");
-    expect(result.tokensUsed).toBe(150);
+    await extractRecipeFromInstagram(input);
+
+    expect(mockAnthropic).toHaveBeenCalledWith(input);
+    expect(mockGemini).not.toHaveBeenCalled();
   });
 
-  it("fails gracefully when the tool output has an invalid category (hallucination guard)", async () => {
-    mockCreate.mockResolvedValue(
-      toolUseResponse({
-        title: "Mystery Dish",
-        servings: 2,
-        ingredients: [{ name: "Etwas", category: "nicht_existierende_kategorie" }],
-        steps: [{ text: "Kochen." }],
-        tagNames: [],
-      }),
-    );
-
+  it("uses Anthropic when AI_PROVIDER is an unrecognized value", async () => {
+    process.env.AI_PROVIDER = "openai";
     const { extractRecipeFromInstagram } = await import("./ai-import");
-    const result = await extractRecipeFromInstagram({
-      captionText: "Ein Rezept mit komischer Kategorie...",
-      sourceUrl: "https://www.instagram.com/p/abc123/",
-      fallbackTitle: null,
-    });
 
-    expect(result.ok).toBe(false);
+    await extractRecipeFromInstagram(input);
+
+    expect(mockAnthropic).toHaveBeenCalledWith(input);
+    expect(mockGemini).not.toHaveBeenCalled();
   });
 
-  it("fails gracefully when no ingredients could be extracted", async () => {
-    mockCreate.mockResolvedValue(
-      toolUseResponse({
-        title: "Werbepost ohne Rezept",
-        servings: 2,
-        ingredients: [],
-        steps: [],
-        tagNames: [],
-      }),
-    );
-
+  it("uses Gemini when AI_PROVIDER=gemini", async () => {
+    process.env.AI_PROVIDER = "gemini";
     const { extractRecipeFromInstagram } = await import("./ai-import");
-    const result = await extractRecipeFromInstagram({
-      captionText: "Kauft unser neues Kochbuch!",
-      sourceUrl: "https://www.instagram.com/p/abc123/",
-      fallbackTitle: null,
-    });
 
-    expect(result.ok).toBe(false);
-  });
+    await extractRecipeFromInstagram(input);
 
-  it("fails gracefully when no tool_use block is returned", async () => {
-    mockCreate.mockResolvedValue({
-      content: [{ type: "text", text: "Ich kann das nicht extrahieren." }],
-      usage: { input_tokens: 20, output_tokens: 10 },
-    });
-
-    const { extractRecipeFromInstagram } = await import("./ai-import");
-    const result = await extractRecipeFromInstagram({
-      captionText: "...",
-      sourceUrl: "https://www.instagram.com/p/abc123/",
-      fallbackTitle: null,
-    });
-
-    expect(result.ok).toBe(false);
-    expect(result.tokensUsed).toBe(30);
-  });
-
-  it("fails gracefully when the Anthropic API call throws", async () => {
-    mockCreate.mockRejectedValue(new Error("rate limited"));
-
-    const { extractRecipeFromInstagram } = await import("./ai-import");
-    const result = await extractRecipeFromInstagram({
-      captionText: "...",
-      sourceUrl: "https://www.instagram.com/p/abc123/",
-      fallbackTitle: null,
-    });
-
-    expect(result.ok).toBe(false);
-    expect(result.tokensUsed).toBe(0);
+    expect(mockGemini).toHaveBeenCalledWith(input);
+    expect(mockAnthropic).not.toHaveBeenCalled();
   });
 });

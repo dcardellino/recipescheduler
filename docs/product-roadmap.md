@@ -447,8 +447,13 @@ Phasen-basierter Bauplan. Jede Phase produziert eine lauffähige, demofähige Ve
 **Reference-Sections:** PRD § 6 (FR-028).
 
 - [x] **TASK-088** — Provider-Wahl: Claude API (Anthropic) oder OpenAI
-  Files: `src/lib/ai-import.ts`
-  Notes: Claude Sonnet mit Vision. Tool-Use für strukturiertes Output (JSON-Schema matching RecipeSchema).
+  Files: `src/lib/ai-import.ts`, `src/lib/ai-providers/{types,anthropic,gemini}.ts`
+  Notes: Statt einer einmaligen Provider-Wahl ist der Provider jetzt zur Laufzeit per
+  `AI_PROVIDER=anthropic|gemini`-Env-Var umschaltbar (kein automatischer Fallback).
+  Claude Sonnet und Gemini nutzen beide Vision + strukturierten JSON-Output
+  (Tool-Use bzw. `responseSchema`), validiert gegen dasselbe Zod-Schema in
+  `src/lib/ai-providers/types.ts`. OpenAI wurde nicht umgesetzt — Gemini statt
+  OpenAI gewählt (Nutzerentscheidung).
 
 - [ ] **TASK-089** — UI: "AI-Import"-Tab in /recipes/new
   Files: `src/components/recipe/ai-import-form.tsx`

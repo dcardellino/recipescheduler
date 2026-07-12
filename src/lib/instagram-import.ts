@@ -1,7 +1,7 @@
 import { parseHTML } from "linkedom";
-import type Anthropic from "@anthropic-ai/sdk";
 import { fetchHtml } from "@/lib/fetch-html";
 import { extractRecipeFromInstagram } from "@/lib/ai-import";
+import type { ImageMediaType } from "@/lib/ai-providers/types";
 import type { ParseResult } from "@/lib/recipe-parser";
 
 const IMAGE_FETCH_TIMEOUT_MS = 10_000;
@@ -44,9 +44,7 @@ export function isCaptionUsable(caption: string): boolean {
   return !GENERIC_CAPTION_PATTERNS.some((pattern) => pattern.test(trimmed));
 }
 
-function normalizeImageMediaType(
-  contentType: string | null,
-): Anthropic.Base64ImageSource["media_type"] | null {
+function normalizeImageMediaType(contentType: string | null): ImageMediaType | null {
   const base = (contentType ?? "").split(";")[0].trim().toLowerCase();
   switch (base) {
     case "image/jpeg":
@@ -66,7 +64,7 @@ function normalizeImageMediaType(
 async function downloadImage(
   imageUrl: string,
   referer: string,
-): Promise<{ buffer: Buffer; mediaType: Anthropic.Base64ImageSource["media_type"] } | null> {
+): Promise<{ buffer: Buffer; mediaType: ImageMediaType } | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
   try {
@@ -145,7 +143,7 @@ export async function fetchInstagramRecipe(url: string): Promise<ParseResult> {
   }
 
   let imageBuffer: Buffer | null = null;
-  let imageMediaType: Anthropic.Base64ImageSource["media_type"] | null = null;
+  let imageMediaType: ImageMediaType | null = null;
   if (!usableCaption && rawImageUrl) {
     const downloaded = await downloadImage(rawImageUrl, url);
     if (downloaded) {
