@@ -124,8 +124,10 @@ export function ImportForm({ availableTags, onFallback }: ImportFormProps) {
         </div>
         <p className="text-sm text-muted-foreground">
           Paste eine URL von Chefkoch, NYT Cooking, Kitchen Stories, BBC Good
-          Food oder einfachbacken.de. Wir laden Titel, Zutaten, Schritte und
-          Foto. Du kannst danach alles bearbeiten.
+          Food, einfachbacken.de oder einen Instagram-Post-Link. Wir laden
+          Titel, Zutaten, Schritte und Foto. Du kannst danach alles
+          bearbeiten. Bei Instagram klappt das nicht bei jedem Post
+          zuverlässig, da automatische Abrufe teils blockiert werden.
         </p>
       </div>
     </form>

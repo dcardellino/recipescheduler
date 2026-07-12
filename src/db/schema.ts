@@ -377,6 +377,43 @@ export const shoppingListItemRelations = relations(
   }),
 );
 
+// --- Application domain: AI import usage tracking ---
+// One row per Instagram AI-import attempt, used to enforce a per-household
+// monthly cap on paid Claude API calls (see src/lib/ai-usage.ts).
+
+export const aiImportUsage = pgTable(
+  "ai_import_usage",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    householdId: uuid("household_id")
+      .notNull()
+      .references(() => household.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    success: boolean("success").notNull(),
+    tokensUsed: integer("tokens_used"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("idx_ai_import_usage_household_created").on(
+      t.householdId,
+      t.createdAt.desc(),
+    ),
+  ],
+);
+
+export const aiImportUsageRelations = relations(aiImportUsage, ({ one }) => ({
+  household: one(household, {
+    fields: [aiImportUsage.householdId],
+    references: [household.id],
+  }),
+  user: one(user, {
+    fields: [aiImportUsage.userId],
+    references: [user.id],
+  }),
+}));
+
 // --- Inferred types ---
 
 export type User = typeof user.$inferSelect;
@@ -398,3 +435,5 @@ export type NewMealPlanEntry = typeof mealPlanEntry.$inferInsert;
 export type ShoppingList = typeof shoppingList.$inferSelect;
 export type ShoppingListItem = typeof shoppingListItem.$inferSelect;
 export type NewShoppingListItem = typeof shoppingListItem.$inferInsert;
+export type AiImportUsage = typeof aiImportUsage.$inferSelect;
+export type NewAiImportUsage = typeof aiImportUsage.$inferInsert;
