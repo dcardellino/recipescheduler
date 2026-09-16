@@ -10,7 +10,7 @@ vi.mock("@/lib/ai-providers/gemini", () => ({
   extractRecipeGemini: mockGemini,
 }));
 
-describe("extractRecipeFromInstagram (provider dispatcher)", () => {
+describe("extractRecipeFromContent (provider dispatcher)", () => {
   const originalProvider = process.env.AI_PROVIDER;
 
   beforeEach(() => {
@@ -30,9 +30,9 @@ describe("extractRecipeFromInstagram (provider dispatcher)", () => {
 
   it("defaults to Anthropic when AI_PROVIDER is unset", async () => {
     delete process.env.AI_PROVIDER;
-    const { extractRecipeFromInstagram } = await import("./ai-import");
+    const { extractRecipeFromContent } = await import("./ai-import");
 
-    await extractRecipeFromInstagram(input);
+    await extractRecipeFromContent(input);
 
     expect(mockAnthropic).toHaveBeenCalledWith(input);
     expect(mockGemini).not.toHaveBeenCalled();
@@ -40,9 +40,9 @@ describe("extractRecipeFromInstagram (provider dispatcher)", () => {
 
   it("uses Anthropic when AI_PROVIDER is an unrecognized value", async () => {
     process.env.AI_PROVIDER = "openai";
-    const { extractRecipeFromInstagram } = await import("./ai-import");
+    const { extractRecipeFromContent } = await import("./ai-import");
 
-    await extractRecipeFromInstagram(input);
+    await extractRecipeFromContent(input);
 
     expect(mockAnthropic).toHaveBeenCalledWith(input);
     expect(mockGemini).not.toHaveBeenCalled();
@@ -50,9 +50,9 @@ describe("extractRecipeFromInstagram (provider dispatcher)", () => {
 
   it("uses Gemini when AI_PROVIDER=gemini", async () => {
     process.env.AI_PROVIDER = "gemini";
-    const { extractRecipeFromInstagram } = await import("./ai-import");
+    const { extractRecipeFromContent } = await import("./ai-import");
 
-    await extractRecipeFromInstagram(input);
+    await extractRecipeFromContent(input);
 
     expect(mockGemini).toHaveBeenCalledWith(input);
     expect(mockAnthropic).not.toHaveBeenCalled();

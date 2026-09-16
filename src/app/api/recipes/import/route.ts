@@ -2,33 +2,19 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { ForbiddenError, UnauthorizedError, getAuthUser, requireHousehold } from "@/lib/authz";
 import { fetchRecipeFromUrl } from "@/lib/recipe-parser";
-import { fetchInstagramRecipe } from "@/lib/instagram-import";
+import { detectSocialPlatform, fetchSocialRecipe } from "@/lib/social-import";
 import { getMonthlyAiImportCount, recordAiImportUsage } from "@/lib/ai-usage";
+import {
+  AI_IMPORT_MONTHLY_LIMIT,
+  aiLimitResponse,
+  importRateLimitOk,
+  rateLimitResponse,
+} from "@/lib/import-limits";
 import { uploadImageFromUrl } from "@/lib/storage";
-
-const AI_IMPORT_MONTHLY_LIMIT = 40;
 
 const bodySchema = z.object({
   url: z.string().trim().url().max(2000),
 });
-
-const RATE_LIMIT_MAX = 10;
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const hits = new Map<string, number[]>();
-
-function rateLimitOk(userId: string): boolean {
-  const now = Date.now();
-  const windowStart = now - RATE_LIMIT_WINDOW_MS;
-  const prev = hits.get(userId) ?? [];
-  const recent = prev.filter((t) => t > windowStart);
-  if (recent.length >= RATE_LIMIT_MAX) {
-    hits.set(userId, recent);
-    return false;
-  }
-  recent.push(now);
-  hits.set(userId, recent);
-  return true;
-}
 
 export async function POST(request: Request) {
   const authUser = await getAuthUser();
@@ -36,11 +22,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!rateLimitOk(authUser.id)) {
-    return NextResponse.json(
-      { error: "Too many requests. Versuch's in einer Minute erneut." },
-      { status: 429 },
-    );
+  if (!importRateLimitOk(authUser.id)) {
+    return rateLimitResponse();
   }
 
   const json = await request.json().catch(() => null);
@@ -52,10 +35,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const isInstagram = isInstagramUrl(parsed.data.url);
+  const platform = detectSocialPlatform(parsed.data.url);
 
   let householdId: string | null = null;
-  if (isInstagram) {
+  if (platform) {
     try {
       ({ householdId } = await requireHousehold());
     } catch (err) {
@@ -70,22 +53,17 @@ export async function POST(request: Request) {
 
     const usageCount = await getMonthlyAiImportCount(householdId);
     if (usageCount >= AI_IMPORT_MONTHLY_LIMIT) {
-      return NextResponse.json(
-        {
-          error:
-            "KI-Import-Limit für diesen Monat erreicht. Bitte trage das Rezept manuell ein.",
-          code: "ai_limit_reached",
-        },
-        { status: 429 },
-      );
+      return aiLimitResponse();
     }
   }
 
-  const result = isInstagram
-    ? await fetchInstagramRecipe(parsed.data.url)
+  const result = platform
+    ? await fetchSocialRecipe(parsed.data.url, platform)
     : await fetchRecipeFromUrl(parsed.data.url);
 
-  if (isInstagram && householdId) {
+  // Only a run that actually called the provider counts against the quota —
+  // a social post whose page carried Recipe JSON-LD costs nothing.
+  if (householdId && "usedAi" in result && result.usedAi) {
     await recordAiImportUsage(householdId, authUser.id, result.ok);
   }
 
@@ -102,8 +80,9 @@ export async function POST(request: Request) {
     }
     return NextResponse.json(
       {
-        error:
-          "Diese Seite unterstützt keinen automatischen Import. Trage das Rezept manuell ein.",
+        error: platform
+          ? "Aus diesem Post konnten wir kein Rezept lesen — viele Posts sind ohne Login nicht abrufbar. Kopier den Text in den Tab „Text einfügen“ oder trage das Rezept manuell ein."
+          : "Diese Seite unterstützt keinen automatischen Import. Trage das Rezept manuell ein.",
         code: "no_recipe",
         fallbackTitle: result.fallbackTitle,
       },
@@ -143,15 +122,6 @@ export async function POST(request: Request) {
     imageSourceUrl: result.rawImageUrl,
     imageError,
   });
-}
-
-function isInstagramUrl(url: string): boolean {
-  try {
-    const host = new URL(url).hostname.replace(/^www\./, "").toLowerCase();
-    return host === "instagram.com";
-  } catch {
-    return false;
-  }
 }
 
 function resolveUrl(raw: string, base: string): string | null {

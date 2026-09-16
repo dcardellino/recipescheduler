@@ -8,6 +8,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { ImportForm } from "@/components/recipe/import-form";
+import { TextImportForm } from "@/components/recipe/text-import-form";
 import { RecipeForm } from "@/components/recipe/recipe-form";
 import type { RecipeFormInput } from "@/lib/schemas/recipe";
 
@@ -31,7 +32,8 @@ export function NewRecipeTabs({ availableTags }: NewRecipeTabsProps) {
   return (
     <Tabs value={tab} onValueChange={(v) => setTab(v as string)}>
       <TabsList>
-        <TabsTrigger value="import">Importieren</TabsTrigger>
+        <TabsTrigger value="import">Link</TabsTrigger>
+        <TabsTrigger value="text">Text einfügen</TabsTrigger>
         <TabsTrigger value="manual">Manuell</TabsTrigger>
       </TabsList>
       <TabsContent value="import" className="pt-6">
@@ -39,6 +41,9 @@ export function NewRecipeTabs({ availableTags }: NewRecipeTabsProps) {
           availableTags={availableTags}
           onFallback={handleFallback}
         />
+      </TabsContent>
+      <TabsContent value="text" className="pt-6">
+        <TextImportForm availableTags={availableTags} />
       </TabsContent>
       <TabsContent value="manual" className="pt-6">
         <RecipeForm
