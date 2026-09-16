@@ -11,6 +11,14 @@ export const MEAL_TYPE_LABELS: Record<MealTypeValue, string> = {
   snack: "Snack",
 };
 
+/** Order meals are shown in within a day. */
+export const MEAL_TYPE_ORDER: Record<MealTypeValue, number> = {
+  breakfast: 0,
+  lunch: 1,
+  dinner: 2,
+  snack: 3,
+};
+
 const isoDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Ungültiges Datum.");
@@ -35,6 +43,12 @@ export const updateServingsSchema = z.object({
   servings,
 });
 export type UpdateServingsInput = z.infer<typeof updateServingsSchema>;
+
+export const updateMealTypeSchema = z.object({
+  id: z.string().uuid(),
+  mealType: mealTypeEnum,
+});
+export type UpdateMealTypeInput = z.infer<typeof updateMealTypeSchema>;
 
 export const weekParamSchema = z
   .string()

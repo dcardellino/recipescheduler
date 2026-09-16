@@ -8,8 +8,10 @@ import { requireHousehold, requireHouseholdAccess } from "@/lib/authz";
 import { getWeekStart, parseISODate, toISODate } from "@/lib/date";
 import {
   addMealPlanEntrySchema,
+  updateMealTypeSchema,
   updateServingsSchema,
   type AddMealPlanEntryInput,
+  type UpdateMealTypeInput,
   type UpdateServingsInput,
 } from "@/lib/schemas/week";
 import { generateShoppingList } from "@/actions/shopping";
@@ -112,5 +114,29 @@ export async function updateServings(
   if (entry) {
     await syncShoppingListIfExists(ctx.householdId, entry.date);
   }
+  revalidatePath("/week");
+}
+
+/**
+ * Moves an entry to another meal of the same day. The shopping list is
+ * unaffected — the ingredients and their amounts don't change — so there is
+ * no regeneration here.
+ */
+export async function updateMealType(
+  input: UpdateMealTypeInput,
+): Promise<void> {
+  const ctx = await requireHousehold();
+  const data = updateMealTypeSchema.parse(input);
+
+  await db
+    .update(mealPlanEntry)
+    .set({ mealType: data.mealType })
+    .where(
+      and(
+        eq(mealPlanEntry.id, data.id),
+        eq(mealPlanEntry.householdId, ctx.householdId),
+      ),
+    );
+
   revalidatePath("/week");
 }

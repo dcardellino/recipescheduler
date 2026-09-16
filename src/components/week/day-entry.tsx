@@ -19,9 +19,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   removeMealPlanEntry,
+  updateMealType,
   updateServings,
 } from "@/actions/week";
+import {
+  MEAL_TYPES,
+  MEAL_TYPE_LABELS,
+  type MealTypeValue,
+} from "@/lib/schemas/week";
+import { catForMealType } from "@/lib/category-colors";
 import { cn } from "@/lib/utils";
 import type { DayEntry as DayEntryData } from "@/lib/queries/week";
 
@@ -91,7 +104,8 @@ export function DayEntry({ entry }: DayEntryProps) {
             Rezept gelöscht
           </span>
         )}
-        <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-muted-foreground">
+          <MealTypeMenu entry={entry} />
           <Users className="size-3" />
           <Input
             type="number"
@@ -172,5 +186,66 @@ function RemoveEntryButton({ entry }: { entry: DayEntryData }) {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  );
+}
+
+function MealTypeMenu({ entry }: { entry: DayEntryData }) {
+  const [optimisticMealType, setOptimisticMealType] = useState<MealTypeValue>(
+    entry.mealType,
+  );
+  const [isPending, startTransition] = useTransition();
+
+  function handleSelect(next: MealTypeValue) {
+    if (next === optimisticMealType) return;
+    const prev = optimisticMealType;
+    setOptimisticMealType(next);
+    startTransition(async () => {
+      try {
+        await updateMealType({ id: entry.id, mealType: next });
+      } catch (err) {
+        setOptimisticMealType(prev);
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Mahlzeit konnte nicht geändert werden.",
+        );
+      }
+    });
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            disabled={isPending}
+            aria-label={`Mahlzeit ändern (aktuell ${MEAL_TYPE_LABELS[optimisticMealType]})`}
+            className="inline-flex items-center gap-1 rounded-sm px-1 py-0.5 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+          />
+        }
+      >
+        <span
+          className={cn(
+            "size-1.5 shrink-0 rounded-full",
+            catForMealType(optimisticMealType).dot,
+          )}
+        />
+        {MEAL_TYPE_LABELS[optimisticMealType]}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {MEAL_TYPES.map((value) => (
+          <DropdownMenuItem key={value} onSelect={() => handleSelect(value)}>
+            <span
+              className={cn(
+                "mr-2 size-1.5 shrink-0 rounded-full",
+                catForMealType(value).dot,
+              )}
+            />
+            {MEAL_TYPE_LABELS[value]}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

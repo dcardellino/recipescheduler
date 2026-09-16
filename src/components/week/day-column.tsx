@@ -7,6 +7,13 @@ import {
   formatDayNumber,
   isSameDay,
 } from "@/lib/date";
+import {
+  MEAL_TYPES,
+  MEAL_TYPE_LABELS,
+  MEAL_TYPE_ORDER,
+  type MealTypeValue,
+} from "@/lib/schemas/week";
+import { catForMealType } from "@/lib/category-colors";
 import { cn } from "@/lib/utils";
 import type { WeekDay } from "@/lib/queries/week";
 import type { RecipeListItem } from "@/lib/queries/recipes";
@@ -26,6 +33,15 @@ export function DayColumn({
 }: DayColumnProps) {
   const today = new Date();
   const isToday = isSameDay(day.date, today);
+
+  // Only meals that actually have entries get a heading — an empty day stays
+  // as quiet as it was before meal types existed.
+  const meals = MEAL_TYPES.map((mealType) => ({
+    mealType,
+    entries: day.entries.filter((e) => e.mealType === mealType),
+  }))
+    .filter((group) => group.entries.length > 0)
+    .sort((a, b) => MEAL_TYPE_ORDER[a.mealType] - MEAL_TYPE_ORDER[b.mealType]);
 
   return (
     <section
@@ -54,17 +70,22 @@ export function DayColumn({
         )}
       </header>
 
-      <div className="flex flex-col gap-1.5">
-        {day.entries.length === 0 ? (
-          <p className="px-1 py-2 text-xs text-muted-foreground">
-            Keine Rezepte
-          </p>
-        ) : (
-          day.entries.map((entry) => (
-            <DayEntry key={entry.id} entry={entry} />
-          ))
-        )}
-      </div>
+      {meals.length === 0 ? (
+        <p className="px-1 py-2 text-xs text-muted-foreground">Keine Rezepte</p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {meals.map((group) => (
+            <MealGroup
+              key={group.mealType}
+              mealType={group.mealType}
+              day={day}
+              entries={group.entries}
+              recipes={recipes}
+              availableTags={availableTags}
+            />
+          ))}
+        </div>
+      )}
 
       <RecipePicker
         date={day.date}
@@ -83,5 +104,55 @@ export function DayColumn({
         }
       />
     </section>
+  );
+}
+
+function MealGroup({
+  mealType,
+  day,
+  entries,
+  recipes,
+  availableTags,
+}: {
+  mealType: MealTypeValue;
+  day: WeekDay;
+  entries: WeekDay["entries"];
+  recipes: RecipeListItem[];
+  availableTags: { id: string; name: string }[];
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between gap-1 px-1">
+        <h3 className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          <span
+            className={cn(
+              "size-1.5 shrink-0 rounded-full",
+              catForMealType(mealType).dot,
+            )}
+          />
+          {MEAL_TYPE_LABELS[mealType]}
+        </h3>
+        <RecipePicker
+          date={day.date}
+          isoDate={day.iso}
+          recipes={recipes}
+          availableTags={availableTags}
+          defaultMealType={mealType}
+          trigger={
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              aria-label={`Rezept zu ${MEAL_TYPE_LABELS[mealType]} hinzufügen`}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Plus />
+            </Button>
+          }
+        />
+      </div>
+      {entries.map((entry) => (
+        <DayEntry key={entry.id} entry={entry} />
+      ))}
+    </div>
   );
 }
