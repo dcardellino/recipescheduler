@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { DeleteRecipeDialog } from "@/components/recipe/delete-recipe-dialog";
+import { CookbookPicker } from "@/components/cookbook/cookbook-picker";
 import { RecipeCookingView } from "@/components/recipe/recipe-cooking-view";
 import type { RecipeDetail as RecipeDetailData } from "@/lib/queries/recipes";
 import { catForTag } from "@/lib/category-colors";
@@ -19,9 +20,15 @@ import { cn } from "@/lib/utils";
 
 type RecipeDetailProps = {
   recipe: RecipeDetailData;
+  cookbooks: { id: string; name: string }[];
+  selectedCookbookIds: string[];
 };
 
-export function RecipeDetail({ recipe }: RecipeDetailProps) {
+export function RecipeDetail({
+  recipe,
+  cookbooks,
+  selectedCookbookIds,
+}: RecipeDetailProps) {
   const totalMinutes = (recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0);
 
   return (
@@ -112,6 +119,11 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
           <Pencil className="size-4" />
           Bearbeiten
         </Button>
+        <CookbookPicker
+          recipeId={recipe.id}
+          cookbooks={cookbooks}
+          selectedIds={selectedCookbookIds}
+        />
         <DeleteRecipeDialog recipeId={recipe.id} recipeTitle={recipe.title} />
       </div>
 

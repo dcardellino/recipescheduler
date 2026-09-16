@@ -22,7 +22,7 @@ export function BottomNav() {
                 }`}
               >
                 <Icon className="h-5 w-5" aria-hidden />
-                <span className="font-mono text-[10px] uppercase tracking-[0.08em]">
+                <span className="w-full truncate px-0.5 text-center font-mono text-[10px] uppercase tracking-[0.08em]">
                   {item.label}
                 </span>
               </Link>
