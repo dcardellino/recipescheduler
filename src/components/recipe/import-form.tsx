@@ -108,7 +108,7 @@ export function ImportForm({ availableTags, onFallback }: ImportFormProps) {
             id="recipe-url"
             type="url"
             required
-            placeholder="https://www.chefkoch.de/rezepte/…"
+            placeholder="https://www.chefkoch.de/rezepte/… oder https://www.instagram.com/p/…"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             disabled={loading}
@@ -123,11 +123,12 @@ export function ImportForm({ availableTags, onFallback }: ImportFormProps) {
           </Button>
         </div>
         <p className="text-sm text-muted-foreground">
-          Paste eine URL von Chefkoch, NYT Cooking, Kitchen Stories, BBC Good
-          Food, einfachbacken.de oder einen Instagram-Post-Link. Wir laden
-          Titel, Zutaten, Schritte und Foto. Du kannst danach alles
-          bearbeiten. Bei Instagram klappt das nicht bei jedem Post
-          zuverlässig, da automatische Abrufe teils blockiert werden.
+          Füge eine URL von einer Rezeptseite (Chefkoch, NYT Cooking, Kitchen
+          Stories, BBC Good Food, einfachbacken.de …) oder einen Link von
+          Instagram, Facebook, TikTok, YouTube oder Pinterest ein. Wir laden
+          Titel, Zutaten, Schritte und Foto — danach kannst du alles
+          bearbeiten. Social-Media-Posts sind teils nur mit Login abrufbar; in
+          dem Fall kopier den Text in den Tab „Text einfügen“.
         </p>
       </div>
     </form>

@@ -75,6 +75,7 @@ export const householdRelations = relations(household, ({ many, one }) => ({
   }),
   recipes: many(recipe),
   tags: many(tag),
+  cookbooks: many(cookbook),
 }));
 
 export const householdMemberRelations = relations(
@@ -215,6 +216,7 @@ export const recipeRelations = relations(recipe, ({ one, many }) => ({
   ingredients: many(recipeIngredient),
   steps: many(recipeStep),
   tags: many(recipeTag),
+  cookbooks: many(cookbookRecipe),
 }));
 
 export const recipeComponentRelations = relations(recipeComponent, ({ one, many }) => ({
@@ -264,6 +266,73 @@ export const recipeTagRelations = relations(recipeTag, ({ one }) => ({
   tag: one(tag, {
     fields: [recipeTag.tagId],
     references: [tag.id],
+  }),
+}));
+
+// --- Application domain: cookbooks ---
+// A cookbook is a named, hand-curated collection of recipes ("Frühstück",
+// "Italienisch", "Vegetarisch"). Free-form on purpose: tags already carry the
+// automatic side of organising, cookbooks carry the deliberate one.
+
+export const cookbook = pgTable(
+  "cookbook",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    householdId: uuid("household_id")
+      .notNull()
+      .references(() => household.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    createdBy: uuid("created_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    unique("cookbook_household_name_unique").on(t.householdId, t.name),
+    index("idx_cookbook_household_name").on(t.householdId, t.name),
+  ],
+);
+
+export const cookbookRecipe = pgTable(
+  "cookbook_recipe",
+  {
+    cookbookId: uuid("cookbook_id")
+      .notNull()
+      .references(() => cookbook.id, { onDelete: "cascade" }),
+    recipeId: uuid("recipe_id")
+      .notNull()
+      .references(() => recipe.id, { onDelete: "cascade" }),
+    position: integer("position").notNull().default(0),
+    addedAt: timestamp("added_at").notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.cookbookId, t.recipeId] }),
+    index("idx_cookbook_recipe_recipe").on(t.recipeId),
+  ],
+);
+
+export const cookbookRelations = relations(cookbook, ({ one, many }) => ({
+  household: one(household, {
+    fields: [cookbook.householdId],
+    references: [household.id],
+  }),
+  creator: one(user, {
+    fields: [cookbook.createdBy],
+    references: [user.id],
+  }),
+  recipes: many(cookbookRecipe),
+}));
+
+export const cookbookRecipeRelations = relations(cookbookRecipe, ({ one }) => ({
+  cookbook: one(cookbook, {
+    fields: [cookbookRecipe.cookbookId],
+    references: [cookbook.id],
+  }),
+  recipe: one(recipe, {
+    fields: [cookbookRecipe.recipeId],
+    references: [recipe.id],
   }),
 }));
 
@@ -432,6 +501,9 @@ export type IngredientCategory = (typeof ingredientCategory.enumValues)[number];
 export type MealType = (typeof mealType.enumValues)[number];
 export type MealPlanEntry = typeof mealPlanEntry.$inferSelect;
 export type NewMealPlanEntry = typeof mealPlanEntry.$inferInsert;
+export type Cookbook = typeof cookbook.$inferSelect;
+export type NewCookbook = typeof cookbook.$inferInsert;
+export type CookbookRecipe = typeof cookbookRecipe.$inferSelect;
 export type ShoppingList = typeof shoppingList.$inferSelect;
 export type ShoppingListItem = typeof shoppingListItem.$inferSelect;
 export type NewShoppingListItem = typeof shoppingListItem.$inferInsert;

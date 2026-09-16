@@ -2,7 +2,12 @@ import "server-only";
 import { GoogleGenAI, Type } from "@google/genai";
 import type { Part, Schema } from "@google/genai";
 import { INGREDIENT_CATEGORIES } from "@/lib/schemas/recipe";
-import { SYSTEM_PROMPT, aiRecipeSchema, buildParsedRecipe } from "@/lib/ai-providers/types";
+import {
+  DEFAULT_CONTENT_LABEL,
+  SYSTEM_PROMPT,
+  aiRecipeSchema,
+  buildParsedRecipe,
+} from "@/lib/ai-providers/types";
 import type { ProviderInput, ProviderResult } from "@/lib/ai-providers/types";
 
 // "gemini-flash-latest" is Google's rolling alias for the current Flash model
@@ -92,7 +97,8 @@ export async function extractRecipeGemini(input: ProviderInput): Promise<Provide
 
   const textParts: string[] = [];
   if (input.captionText) {
-    textParts.push(`Instagram-Bildunterschrift:\n${input.captionText}`);
+    const label = input.contentLabel ?? DEFAULT_CONTENT_LABEL;
+    textParts.push(`${label}:\n${input.captionText}`);
   }
   if (input.fallbackTitle) {
     textParts.push(`Post-Titel (Fallback, falls sonst nichts brauchbar ist): ${input.fallbackTitle}`);

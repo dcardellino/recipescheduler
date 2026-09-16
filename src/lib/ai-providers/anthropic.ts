@@ -1,7 +1,12 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { INGREDIENT_CATEGORIES } from "@/lib/schemas/recipe";
-import { SYSTEM_PROMPT, aiRecipeSchema, buildParsedRecipe } from "@/lib/ai-providers/types";
+import {
+  DEFAULT_CONTENT_LABEL,
+  SYSTEM_PROMPT,
+  aiRecipeSchema,
+  buildParsedRecipe,
+} from "@/lib/ai-providers/types";
 import type { ProviderInput, ProviderResult } from "@/lib/ai-providers/types";
 
 const MODEL = "claude-sonnet-5";
@@ -24,7 +29,7 @@ function getClient(): Anthropic {
 const RECIPE_TOOL: Anthropic.Tool = {
   name: RECIPE_TOOL_NAME,
   description:
-    "Gibt ein aus einem Instagram-Rezept-Post extrahiertes, strukturiertes Kochrezept zurück.",
+    "Gibt ein aus dem gelieferten Inhalt extrahiertes, strukturiertes Kochrezept zurück.",
   input_schema: {
     type: "object",
     properties: {
@@ -93,7 +98,8 @@ export async function extractRecipeAnthropic(input: ProviderInput): Promise<Prov
 
   const textParts: string[] = [];
   if (input.captionText) {
-    textParts.push(`Instagram-Bildunterschrift:\n${input.captionText}`);
+    const label = input.contentLabel ?? DEFAULT_CONTENT_LABEL;
+    textParts.push(`${label}:\n${input.captionText}`);
   }
   if (input.fallbackTitle) {
     textParts.push(`Post-Titel (Fallback, falls sonst nichts brauchbar ist): ${input.fallbackTitle}`);

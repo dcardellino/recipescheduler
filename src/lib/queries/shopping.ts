@@ -1,7 +1,7 @@
 import "server-only";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { shoppingList, shoppingListItem } from "@/db/schema";
+import { recipe, shoppingList, shoppingListItem } from "@/db/schema";
 import { requireHousehold } from "@/lib/authz";
 import { toISODate } from "@/lib/date";
 import {
@@ -21,11 +21,19 @@ export type ShoppingItem = {
   position: number;
 };
 
+export type ShoppingRecipeGroup = {
+  /** null for the catch-all group of manually added items. */
+  recipeId: string | null;
+  title: string;
+  items: ShoppingItem[];
+};
+
 export type ShoppingListView = {
   id: string;
   weekStartDate: string;
   createdAt: Date;
   itemsByCategory: { category: IngredientCategoryValue; items: ShoppingItem[] }[];
+  itemsByRecipe: ShoppingRecipeGroup[];
   total: number;
   done: number;
 };
@@ -78,6 +86,76 @@ function groupByCategory(
     }));
 }
 
+const NO_RECIPE_GROUP_TITLE = "Ohne Rezept";
+
+/**
+ * Groups items by the recipes they came from. An ingredient that several
+ * recipes share is listed under each of them — that is what makes the view
+ * useful when you drop a recipe from the plan — so the group counts add up to
+ * more than the list total.
+ */
+async function groupByRecipe(
+  householdId: string,
+  items: ShoppingItem[],
+): Promise<ShoppingRecipeGroup[]> {
+  const recipeIds = Array.from(
+    new Set(items.flatMap((item) => item.sourceRecipeIds)),
+  );
+
+  const titles = new Map<string, string>();
+  if (recipeIds.length > 0) {
+    const rows = await db
+      .select({ id: recipe.id, title: recipe.title })
+      .from(recipe)
+      .where(
+        and(
+          eq(recipe.householdId, householdId),
+          inArray(recipe.id, recipeIds),
+        ),
+      );
+    for (const row of rows) titles.set(row.id, row.title);
+  }
+
+  const groups = new Map<string, ShoppingRecipeGroup>();
+  const ungrouped: ShoppingItem[] = [];
+
+  for (const item of items) {
+    // A deleted recipe leaves its id behind on the item; treat that like an
+    // item without a source rather than inventing a group for it.
+    const sources = item.sourceRecipeIds.filter((id) => titles.has(id));
+    if (sources.length === 0) {
+      ungrouped.push(item);
+      continue;
+    }
+    for (const recipeId of sources) {
+      const group = groups.get(recipeId) ?? {
+        recipeId,
+        title: titles.get(recipeId) as string,
+        items: [],
+      };
+      group.items.push(item);
+      groups.set(recipeId, group);
+    }
+  }
+
+  const result = Array.from(groups.values()).sort((a, b) =>
+    a.title.localeCompare(b.title, "de-DE"),
+  );
+  for (const group of result) {
+    group.items.sort((a, b) => a.position - b.position);
+  }
+
+  if (ungrouped.length > 0) {
+    result.push({
+      recipeId: null,
+      title: NO_RECIPE_GROUP_TITLE,
+      items: ungrouped.sort((a, b) => a.position - b.position),
+    });
+  }
+
+  return result;
+}
+
 export async function getShoppingListForWeek(
   weekStartDate: Date,
 ): Promise<ShoppingListView | null> {
@@ -103,6 +181,7 @@ export async function getShoppingListForWeek(
     weekStartDate: list.weekStartDate,
     createdAt: list.createdAt,
     itemsByCategory: groupByCategory(items),
+    itemsByRecipe: await groupByRecipe(householdId, items),
     total: items.length,
     done: items.filter((i) => i.checked).length,
   };
@@ -132,6 +211,7 @@ export async function getShoppingList(
     weekStartDate: list.weekStartDate,
     createdAt: list.createdAt,
     itemsByCategory: groupByCategory(items),
+    itemsByRecipe: await groupByRecipe(householdId, items),
     total: items.length,
     done: items.filter((i) => i.checked).length,
   };

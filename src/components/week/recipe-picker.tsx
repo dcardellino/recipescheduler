@@ -18,6 +18,12 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { addMealPlanEntry } from "@/actions/week";
 import { formatDayLabel } from "@/lib/date";
+import {
+  MEAL_TYPES,
+  MEAL_TYPE_LABELS,
+  type MealTypeValue,
+} from "@/lib/schemas/week";
+import { catForMealType } from "@/lib/category-colors";
 import { cn } from "@/lib/utils";
 import type { RecipeListItem } from "@/lib/queries/recipes";
 
@@ -26,6 +32,8 @@ type RecipePickerProps = {
   isoDate: string;
   recipes: RecipeListItem[];
   availableTags: { id: string; name: string }[];
+  /** Preselected meal, e.g. when adding from a meal's own "+" button. */
+  defaultMealType?: MealTypeValue;
   trigger?: React.ReactElement;
 };
 
@@ -34,9 +42,11 @@ export function RecipePicker({
   isoDate,
   recipes,
   availableTags,
+  defaultMealType = "dinner",
   trigger,
 }: RecipePickerProps) {
   const [open, setOpen] = useState(false);
+  const [mealType, setMealType] = useState<MealTypeValue>(defaultMealType);
   const [query, setQuery] = useState("");
   const [activeTagIds, setActiveTagIds] = useState<string[]>([]);
   const [pendingRecipeId, setPendingRecipeId] = useState<string | null>(null);
@@ -71,9 +81,11 @@ export function RecipePicker({
         await addMealPlanEntry({
           recipeId,
           date: isoDate,
-          mealType: "dinner",
+          mealType,
         });
-        toast.success("Zum Wochenplan hinzugefügt.");
+        toast.success(
+          `Als ${MEAL_TYPE_LABELS[mealType]} zum Wochenplan hinzugefügt.`,
+        );
         setOpen(false);
         setQuery("");
       } catch (err) {
@@ -87,7 +99,13 @@ export function RecipePicker({
   }
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (next) setMealType(defaultMealType);
+        setOpen(next);
+      }}
+    >
       <SheetTrigger
         render={
           trigger ?? (
@@ -108,6 +126,38 @@ export function RecipePicker({
         </SheetHeader>
 
         <div className="flex flex-col gap-3 p-4">
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="mb-1.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+              Mahlzeit
+            </legend>
+            <div className="flex flex-wrap gap-1.5">
+              {MEAL_TYPES.map((value) => {
+                const active = mealType === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setMealType(value)}
+                    aria-pressed={active}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-sm border px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background hover:bg-muted",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "size-1.5 shrink-0 rounded-full",
+                        catForMealType(value).dot,
+                      )}
+                    />
+                    {MEAL_TYPE_LABELS[value]}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
           <div className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input

@@ -1,4 +1,5 @@
 import type { IngredientCategoryValue } from "@/lib/schemas/recipe";
+import type { MealTypeValue } from "@/lib/schemas/week";
 
 /**
  * The 8 muted "category" colours from the Atlas design system. In
@@ -122,4 +123,17 @@ export function catForTag(name: string): CatClassSet {
 /** Class set for a shopping category (fixed mapping). */
 export function catForCategory(category: IngredientCategoryValue): CatClassSet {
   return CAT_CLASSES[CATEGORY_CAT_COLOR[category]];
+}
+
+/** Fixed colour per meal, so a day's plan reads at a glance. */
+export const MEAL_TYPE_CAT_COLOR: Record<MealTypeValue, CatColor> = {
+  breakfast: "gold",
+  lunch: "teal",
+  dinner: "rust",
+  snack: "violet",
+};
+
+/** Class set for a meal type (fixed mapping). */
+export function catForMealType(mealType: MealTypeValue): CatClassSet {
+  return CAT_CLASSES[MEAL_TYPE_CAT_COLOR[mealType]];
 }

@@ -455,14 +455,13 @@ Phasen-basierter Bauplan. Jede Phase produziert eine lauffähige, demofähige Ve
   `src/lib/ai-providers/types.ts`. OpenAI wurde nicht umgesetzt — Gemini statt
   OpenAI gewählt (Nutzerentscheidung).
 
-- [ ] **TASK-089** — UI: "AI-Import"-Tab in /recipes/new
-  Files: `src/components/recipe/ai-import-form.tsx`
-  Notes: **Abweichung vom ursprünglichen Plan:** Statt eines separaten Tabs mit drei
-  Input-Varianten (URL/Foto/Freitext) wurde der Instagram-Import bewusst in den
-  bestehenden "Importieren"-Tab integriert (`src/components/recipe/import-form.tsx`).
-  Die API-Route erkennt `instagram.com`-URLs am Hostname und schaltet automatisch
-  auf den KI-Pfad um — kein manuelles Foto-Upload/Freitext-Feld in der UI, rein
-  URL-basiert. Siehe TASK-090/091. Nutzerentscheidung, daher bewusst nicht abgehakt.
+- [x] **TASK-089** — UI: "AI-Import"-Tab in /recipes/new
+  Files: `src/components/recipe/import-form.tsx`, `src/components/recipe/text-import-form.tsx`
+  Notes: **Abweichung vom ursprünglichen Plan:** Kein separater "AI-Import"-Tab, sondern
+  zwei Tabs nach Eingabeart: "Link" (`import-form.tsx`, erkennt Social-Media-URLs am
+  Hostname und schaltet automatisch auf den KI-Pfad um) und "Text einfügen"
+  (`text-import-form.tsx`, Phase 9 / TASK-102). Ein manuelles Foto-Upload-Feld gibt es
+  weiterhin nicht — Bilder kommen aus dem `og:image` des Posts. Siehe TASK-090/091.
 
 - [x] **TASK-090** — Bild-Analyse (Vision-Input)
   Files: `src/lib/instagram-import.ts`, `src/lib/ai-import.ts`
@@ -503,6 +502,63 @@ Reihenfolge nach Lust und Zeit:
 - [ ] **TASK-097** — Dark Mode (System-adaptive)
 - [ ] **TASK-098** — Command Palette (Cmd+K)
 - [ ] **TASK-099** — "Gäste heute?" Flag pro Entry → Portionen ×2
+
+---
+
+## Phase 9 — Feature-Ausbau: Import überall, Kochbücher, Skalierung
+
+**Goal:** Die App deckt den kompletten Alltag ab — Rezepte aus jeder Quelle rein, Kochbücher zum Sortieren, Mengen und Maße beim Kochen anpassbar.
+**Demo:** TikTok-Link importieren → Rezept in ein Kochbuch legen → auf 6 Portionen skalieren und auf US-Maße umschalten → als Mittagessen einplanen → Einkaufsliste nach Rezept sortieren.
+
+- [x] **TASK-100** — Social-Import auf Facebook, TikTok, YouTube und Pinterest erweitern
+  Files: `src/lib/social-import.ts` (vormals `instagram-import.ts`), `src/app/api/recipes/import/route.ts`
+  Notes: `detectSocialPlatform()` erkennt alle fünf Plattformen inkl. Kurzlink- und
+  Regional-Domains (youtu.be, fb.watch, vm.tiktok.com, pin.it, pinterest.de/.co.uk).
+  Caption-Extraktion pro Plattform: YouTube liest die volle Beschreibung aus
+  `"shortDescription"` im Player-Payload, TikTok schält die Engagement-Boilerplate ab,
+  Rest über og:/twitter:-Meta. Bild-Fallback via Vision bleibt wie gehabt.
+
+- [x] **TASK-101** — JSON-LD vor KI: Social-Seiten zuerst durch den Rezept-Parser schicken
+  Files: `src/lib/social-import.ts`
+  Notes: Pinterest-Rich-Pins tragen oft das Recipe-Markup der Quellseite. Der Treffer
+  kostet keinen KI-Call; `SocialImportOutcome.usedAi` sagt der Route, ob das Monatslimit
+  überhaupt belastet werden muss.
+
+- [x] **TASK-102** — Freitext-Import für Paprika, Notizen, Google Docs, Notion, Evernote
+  Files: `src/app/api/recipes/import-text/route.ts`, `src/components/recipe/text-import-form.tsx`, `src/lib/import-limits.ts`
+  Notes: Eingefügter Text (30–20.000 Zeichen) geht an denselben Provider. Rate-Limit und
+  KI-Monatsbudget teilen sich beide Import-Routen (`src/lib/import-limits.ts`), damit man
+  das Budget nicht durch Tab-Wechsel umgeht.
+
+- [x] **TASK-103** — Portionen skalieren und Maße umrechnen im Rezept
+  Files: `src/lib/measurement.ts`, `src/components/recipe/recipe-cooking-view.tsx`
+  Notes: Rein anzeigeseitig — das gespeicherte Rezept bleibt unverändert. Umrechnung für
+  Gewicht, Volumen und Länge, Löffelmaße als Äquivalente (EL ≈ tbsp), US-Volumen als
+  Brüche ("1 ½ cup"), Backofen-Temperaturen im Schritttext auf die üblichen 25°F-Stufen.
+
+- [x] **TASK-104** — Kochbücher
+  Files: `src/db/schema.ts`, `src/db/migrations/0002_*.sql`, `src/lib/queries/cookbooks.ts`, `src/actions/cookbooks.ts`, `src/app/(app)/cookbooks/**`, `src/components/cookbook/**`
+  Notes: n:m über `cookbook_recipe`. Ein Rezept darf in mehreren Kochbüchern liegen;
+  Löschen eines Kochbuchs lässt die Rezepte in der Library. Vorschlagsnamen im
+  Anlege-Dialog decken Mahlzeit, Gang, Küche und Ernährungsform ab.
+
+- [x] **TASK-105** — Einkaufsliste nach Gang oder Rezept sortieren
+  Files: `src/lib/queries/shopping.ts`, `src/components/shopping/shopping-list.tsx`
+  Notes: Beide Gruppierungen kommen aus derselben Query, der Toggle läuft client-seitig.
+  Zutaten aus mehreren Rezepten erscheinen unter jedem davon (derselbe Eintrag).
+
+- [x] **TASK-106** — Mahlzeitentypen im Wochenplan sichtbar machen
+  Files: `src/components/week/{recipe-picker,day-column,day-entry}.tsx`, `src/actions/week.ts`, `src/lib/schemas/week.ts`
+  Notes: `meal_type` lag seit Phase 3 in der DB, die UI hat aber immer "dinner"
+  geschrieben. Jetzt: Auswahl beim Hinzufügen, Gruppierung pro Tag in Essensreihenfolge,
+  Wechsel per Dropdown am Eintrag (`updateMealType`).
+
+- [ ] **TASK-107** — Kochbuch-Filter in der Library
+  Notes: Offen. Aktuell führt der Weg über die Kochbuch-Seite; ein Filter-Chip in
+  `/recipes` wäre der nächste kleine Schritt.
+
+**Phase 9 Summary Prompt für Claude Code:**
+> "Phase 9 umsetzen: Import aus allen relevanten Quellen (Social + Freitext), Kochbücher als Ordnungsebene, Portions-Skalierung und Maßumrechnung im Rezept, Mahlzeitentypen im Wochenplan, Einkaufsliste wahlweise nach Gang oder Rezept."
 
 ---
 

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { RecipeDetail } from "@/components/recipe/recipe-detail";
 import { getRecipe } from "@/lib/queries/recipes";
+import { listCookbooksForRecipe } from "@/lib/queries/cookbooks";
 
 export default async function RecipeDetailPage({
   params,
@@ -13,6 +14,8 @@ export default async function RecipeDetailPage({
   const recipe = await getRecipe(id);
   if (!recipe) notFound();
 
+  const { cookbooks, selectedIds } = await listCookbooksForRecipe(recipe.id);
+
   return (
     <div className="space-y-4">
       <Link
@@ -22,7 +25,11 @@ export default async function RecipeDetailPage({
         <ChevronLeft className="size-4" />
         Zurück zur Library
       </Link>
-      <RecipeDetail recipe={recipe} />
+      <RecipeDetail
+        recipe={recipe}
+        cookbooks={cookbooks}
+        selectedCookbookIds={selectedIds}
+      />
     </div>
   );
 }
