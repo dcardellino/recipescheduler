@@ -286,6 +286,22 @@ recipe-scheduler/
 - `sourceRecipeIds` uuid[] (welche Rezepte diese Zutat triggerten)
 - `position` integer
 
+**cookbooks** (Phase 9)
+- `id` uuid primary key
+- `householdId` uuid references households(id) on delete cascade
+- `name` text not null
+- `description` text
+- `createdBy` uuid references users(id) on delete set null
+- `createdAt` / `updatedAt` timestamp default now()
+- unique(householdId, name)
+
+**cookbookRecipes** (Phase 9)
+- `cookbookId` uuid references cookbooks(id) on delete cascade
+- `recipeId` uuid references recipes(id) on delete cascade
+- `position` integer default 0
+- `addedAt` timestamp default now()
+- primary key(cookbookId, recipeId)
+
 ### Enums
 
 ```sql
@@ -315,6 +331,8 @@ CREATE TYPE household_role AS ENUM ('owner', 'member');
 - `recipes(householdId, title)` — Suche
 - `mealPlanEntries(householdId, date)` — Wochenplan-Abfrage
 - `shoppingListItems(shoppingListId, position)`
+- `cookbooks(householdId, name)` — Kochbuch-Listing
+- `cookbookRecipes(recipeId)` — "in welchen Kochbüchern liegt dieses Rezept?"
 - GIN-Index auf `recipes.title` für Trigram-Suche (pg_trgm)
 
 ---
@@ -494,6 +512,13 @@ Priorität: **P0** = MVP blocker, **P1** = MVP nice-to-have, **P2** = Post-MVP
 | FR-028 | AI-Import | P2 | Text/Instagram-Link/Screenshot → LLM-Strukturierung. |
 | FR-029 | Export-PDF Rezept | P2 | Einzelnes Rezept als druckbare PDF. |
 | FR-030 | Rezept-Historie ("zuletzt gekocht") | P2 | Derived aus mealPlanEntries mit date in Vergangenheit. |
+| FR-031 | Social-Media-Import | P1 | Links von Instagram, Facebook, TikTok, YouTube und Pinterest (inkl. Kurzlinks). JSON-LD zuerst, sonst Caption/Bild → LLM. Umgesetzt in Phase 9. |
+| FR-032 | Freitext-Import | P1 | Eingefügter Rezepttext aus Paprika, Notizen, Google Docs, Notion, Evernote → LLM-Strukturierung. Teilt sich Rate-Limit und Monatsbudget mit FR-031. |
+| FR-033 | Kochbücher | P1 | Benannte Sammlungen (n:m zu Rezepten) nach Mahlzeit, Gang, Küche, Ernährungsform. Löschen lässt die Rezepte bestehen. |
+| FR-034 | Portionen skalieren | P1 | Anzeigeseitige Skalierung der Mengen im Rezept-Detail; das gespeicherte Rezept bleibt unverändert. |
+| FR-035 | Maße umrechnen | P1 | Umschalten metrisch ↔ US/Imperial für Gewicht, Volumen, Länge inkl. Backofen-Temperaturen im Schritttext. |
+| FR-036 | Mahlzeitentyp im Wochenplan | P1 | Frühstück/Mittag/Abend/Snack beim Einplanen wählbar, pro Tag gruppiert, nachträglich änderbar. |
+| FR-037 | Einkaufsliste nach Rezept | P1 | Umschalten zwischen Gruppierung nach Supermarkt-Gang und nach Quell-Rezept. |
 
 ---
 
